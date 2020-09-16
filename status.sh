@@ -6,7 +6,7 @@ export PATH
 #	System Required: CentOS/Debian/Ubuntu
 #	Description: ServerStatus client + server
 #	Version: Test v0.008
-#	Author: Toyo,Modify by CokeMine
+#	Author: Toyo,Modify by One(admin@zhouchunyu.com)
 #=================================================
 
 sh_ver="0.0.1"
@@ -64,11 +64,11 @@ check_pid_client(){
 }
 Download_Server_Status_server(){
 	cd "/usr/local"
-	wget -N --no-check-certificate "https://github.com/chunyu-zhou/ServerStatusPlus/archive/master.zip"
-	[[ ! -e "master.zip" ]] && echo -e "${Error} ServerStatus 服务端下载失败 !" && exit 1
-	unzip master.zip
-	mv 'ServerStatusPlus-master' 'ServerStatus'
-	rm -rf master.zip
+	wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/ServerStatus.zip"
+	[[ ! -e "ServerStatus.zip" ]] && echo -e "${Error} ServerStatus 服务端下载失败 !" && exit 1
+	unzip ServerStatus.zip
+	# mv 'ServerStatusPlus-master' 'ServerStatus'
+	rm -rf ServerStatus.zip
 	[[ ! -e "/usr/local/ServerStatus" ]] && echo -e "${Error} ServerStatus 服务端解压失败 !" && exit 1
 	cd "/usr/local/ServerStatus/server"
 	make
@@ -79,7 +79,7 @@ Download_Server_Status_server(){
 }
 Download_Server_Status_client(){
 	cd "/tmp"
-	wget -N --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/clients/client-linux.py"
+	wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/clients/client-linux.py"
 	[[ ! -e "client-linux.py" ]] && echo -e "${Error} ServerStatus 客户端下载失败 !" && exit 1
 	cd "${file_1}"
 	[[ ! -e "${file}" ]] && mkdir "${file}"
@@ -106,14 +106,14 @@ Download_Server_Status_client(){
 }
 Service_Server_Status_server(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/service/server_status_server_centos" -O /etc/init.d/status-server; then
+		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/server_status_server_centos" -O /etc/init.d/status-server; then
 			echo -e "${Error} ServerStatus 服务端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status-server
 		chkconfig --add status-server
 		chkconfig status-server on
 	else
-		if ! wget --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/service/server_status_server_debian" -O /etc/init.d/status-server; then
+		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/server_status_server_debian" -O /etc/init.d/status-server; then
 			echo -e "${Error} ServerStatus 服务端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status-server
@@ -123,14 +123,14 @@ Service_Server_Status_server(){
 }
 Service_Server_Status_client(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/service/server_status_client_centos" -O /etc/init.d/status-client; then
+		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/server_status_client_centos" -O /etc/init.d/status-client; then
 			echo -e "${Error} ServerStatus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status-client
 		chkconfig --add status-client
 		chkconfig status-client on
 	else
-		if ! wget --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/service/server_status_client_debian" -O /etc/init.d/status-client; then
+		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/server_status_client_debian" -O /etc/init.d/status-client; then
 			echo -e "${Error} ServerStatus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status-client
@@ -185,7 +185,9 @@ Write_server_config(){
 			"type": "xen",
 			"host": "host1",
 			"location": "cn",
-			"password": "USER_DEFAULT_PASSWORD"
+			"password": "USER_DEFAULT_PASSWORD",
+			"disabled": false,
+			"region":"US"
 		}
 	]
 }
@@ -201,11 +203,11 @@ Read_config_client(){
 		if [[ ! -e "${file}/status-client.py" ]]; then
 			echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 		else
-			client_text="$(cat "${file}/status-client.py"|sed 's/\"//g;s/,//g;s/ //g')"
+			client_text="$(cat "${file}/status-client.py"|sed -n '8,16p'|sed 's/\"//g;s/,//g;s/ //g')"
 			rm -rf "${file}/status-client.py"
 		fi
 	else
-		client_text="$(cat "${client_file}/status-client.py"|sed 's/\"//g;s/,//g;s/ //g')"
+		client_text="$(cat "${client_file}/status-client.py"|sed -n '8,16p'|sed 's/\"//g;s/,//g;s/ //g')"
 	fi
 	client_server="$(echo -e "${client_text}"|grep "SERVER="|awk -F "=" '{print $2}')"
 	client_port="$(echo -e "${client_text}"|grep "PORT="|awk -F "=" '{print $2}')"
@@ -303,8 +305,8 @@ Set_password(){
 	else
 		echo -e "请输入 ServerStatus 服务端中对应配置的密码[password]（字母/数字）"
 	fi
-	read -e -p "(默认: doub.io):" password_s
-	[[ -z "$password_s" ]] && password_s="doub.io"
+	read -e -p "(默认: USER_DEFAULT_PASSWORD):" password_s
+	[[ -z "$password_s" ]] && password_s="USER_DEFAULT_PASSWORD"
 	echo && echo "	================================================"
 	echo -e "	密码[password]: ${Red_background_prefix} ${password_s} ${Font_color_suffix}"
 	echo "	================================================" && echo
@@ -630,17 +632,17 @@ Set_ServerStatus_client(){
 	Restart_ServerStatus_client
 }
 Modify_config_client(){
-	sed -i 's/SERVER = "'"${client_server}"'"/SERVER = "'"${server_s}"'"/g' "${client_file}/status-client.py"
-	sed -i "s/PORT = ${client_port}/PORT = ${server_port_s}/g" "${client_file}/status-client.py"
-	sed -i 's/USER = "'"${client_user}"'"/USER = "'"${username_s}"'"/g' "${client_file}/status-client.py"
-	sed -i 's/PASSWORD = "'"${client_password}"'"/PASSWORD = "'"${password_s}"'"/g' "${client_file}/status-client.py"
+	sed -i '9c SERVER = "'"${server_s}"'"' "${client_file}/status-client.py"
+	sed -i "14c PORT = ${server_port_s}" "${client_file}/status-client.py"
+	sed -i '10c USER = "'"${username_s}"'"' "${client_file}/status-client.py"
+	sed -i '15c PASSWORD = "'"${password_s}"'"' "${client_file}/status-client.py"
 }
 Install_jq(){
 	if [[ ! -e ${jq_file} ]]; then
 		if [[ ${bit} = "x86_64" ]]; then
-			wget --no-check-certificate "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" -O ${jq_file}
+			wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/jq/jq-1.5/jq-linux64" -O ${jq_file}
 		else
-			wget --no-check-certificate "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux32" -O ${jq_file}
+			wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/jq/jq-1.5/jq-linux32" -O ${jq_file}
 		fi
 		[[ ! -e ${jq_file} ]] && echo -e "${Error} JQ解析器 下载失败，请检查 !" && exit 1
 		chmod +x ${jq_file}
@@ -658,7 +660,7 @@ Install_caddy(){
 		Set_server "server"
 		Set_server_http_port
 		if [[ ! -e "/usr/local/caddy/caddy" ]]; then
-			wget -N --no-check-certificate https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/caddy/caddy_install.sh
+			wget -N --no-check-certificate https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/caddy/caddy_install.sh
 			chmod +x caddy_install.sh
 			bash caddy_install.sh install
 			rm -rf caddy_install.sh
@@ -766,11 +768,11 @@ Update_ServerStatus_client(){
 		if [[ ! -e "${file}/status-client.py" ]]; then
 			echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 		else
-			client_text="$(cat "${file}/status-client.py"|sed 's/\"//g;s/,//g;s/ //g')"
+			client_text="$(cat "${file}/status-client.py"|sed -n '8,16p'|sed 's/\"//g;s/,//g;s/ //g')"
 			rm -rf "${file}/status-client.py"
 		fi
 	else
-		client_text="$(cat "${client_file}/status-client.py"|sed 's/\"//g;s/,//g;s/ //g')"
+		client_text="$(cat "${client_file}/status-client.py"|sed -n '8,16p'|sed 's/\"//g;s/,//g;s/ //g')"
 	fi
 	server_s="$(echo -e "${client_text}"|grep "SERVER="|awk -F "=" '{print $2}')"
 	server_port_s="$(echo -e "${client_text}"|grep "PORT="|awk -F "=" '{print $2}')"
@@ -822,7 +824,7 @@ Uninstall_ServerStatus_server(){
 		rm -rf "/etc/init.d/status-server"
 		if [[ -e "/etc/init.d/caddy" ]]; then
 			/etc/init.d/caddy stop
-			wget -N --no-check-certificate https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/caddy/caddy_install.sh
+			wget -N --no-check-certificate https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/caddy/caddy_install.sh
 			chmod +x caddy_install.sh
 			bash caddy_install.sh uninstall
 			rm -rf caddy_install.sh
@@ -944,7 +946,7 @@ Set_iptables(){
 	fi
 }
 Update_Shell(){
-	sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/status.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
+	sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/status.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
 	[[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Github !" && exit 0
 	if [[ -e "/etc/init.d/status-client" ]]; then
 		rm -rf /etc/init.d/status-client
@@ -954,13 +956,13 @@ Update_Shell(){
 		rm -rf /etc/init.d/status-server
 		Service_Server_Status_server
 	fi
-	wget -N --no-check-certificate "https://raw.githubusercontent.com/chunyu-zhou/ServerStatusPlus/master/status.sh" && chmod +x status.sh
+	wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/status.sh" && chmod +x status.sh
 	echo -e "脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
 }
 menu_client(){
 echo && echo -e "  ServerStatus 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
   -- Toyo | doub.io/shell-jc3 --
-  --    Modify by CokeMine    --
+  --    Modify by One(admin@zhouchunyu.com)    --
  ${Green_font_prefix} 0.${Font_color_suffix} 升级脚本
  ————————————
  ${Green_font_prefix} 1.${Font_color_suffix} 安装 客户端
@@ -1039,7 +1041,7 @@ esac
 menu_server(){
 echo && echo -e "  ServerStatus 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
   -- Toyo | doub.io/shell-jc3 --
-  --    Modify by CokeMine    --
+  --    Modify by One(admin@zhouchunyu.com)    --
  ${Green_font_prefix} 0.${Font_color_suffix} 升级脚本
  ————————————
  ${Green_font_prefix} 1.${Font_color_suffix} 安装 服务端

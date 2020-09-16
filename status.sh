@@ -16,7 +16,7 @@ file="/usr/local/ServerStatus"
 web_file="/usr/local/ServerStatus/web"
 server_file="/usr/local/ServerStatus/server"
 server_conf="/usr/local/ServerStatus/server/config.json"
-server_conf_1="/usr/local/ServerStatus/server/config.conf"
+server_conf_1="/usr/local/ServerStatus/web/json/stats.json"
 client_file="/usr/local/ServerStatus/client"
 client_log_file="/tmp/serverstatus_client.log"
 server_log_file="/tmp/serverstatus_server.log"
@@ -47,7 +47,7 @@ check_sys(){
 	bit=`uname -m`
 }
 check_installed_server_status(){
-	[[ ! -e "${server_file}/sergate" ]] && echo -e "${Error} ServerStatus 服务端没有安装，请检查 !" && exit 1
+	[[ ! -e "/etc/init.d/status-server" ]] && echo -e "${Error} ServerStatus 服务端没有安装，请检查 !" && exit 1
 }
 check_installed_client_status(){
 	if [[ ! -e "${client_file}/status-client.py" ]]; then
@@ -63,40 +63,18 @@ check_pid_client(){
 	PID=`ps -ef| grep "status-client.py"| grep -v grep| grep -v ".sh"| grep -v "init.d"| grep -v "service"| awk '{print $2}'`
 }
 Download_Server_Status_server(){
-	cd "/tmp"
+	cd "/usr/local"
 	wget -N --no-check-certificate "https://github.com/chunyu-zhou/ServerStatusPlus/archive/master.zip"
 	[[ ! -e "master.zip" ]] && echo -e "${Error} ServerStatus 服务端下载失败 !" && exit 1
 	unzip master.zip
-	mv 'ServerStatus-master' '/tmp/ServerStatus'
-	cp '/tmp/ServerStatus/web' '/usr/local/ServerStatus/'
+	mv 'ServerStatusPlus-master' 'ServerStatus'
 	rm -rf master.zip
-	[[ ! -e "/tmp/ServerStatus" ]] && echo -e "${Error} ServerStatus 服务端解压失败 !" && exit 1
-	cd "/tmp/ServerStatus/server"
+	[[ ! -e "/usr/local/ServerStatus" ]] && echo -e "${Error} ServerStatus 服务端解压失败 !" && exit 1
+	cd "/usr/local/ServerStatus/server"
 	make
-	[[ ! -e "sergate" ]] && echo -e "${Error} ServerStatus 服务端编译失败 !" && cd "${file_1}" && rm -rf "/tmp/ServerStatus" && exit 1
-	cd "${file_1}"
-	[[ ! -e "${file}" ]] && mkdir "${file}"
-	if [[ ! -e "${server_file}" ]]; then
-		mkdir "${server_file}"
-		mv "/tmp/ServerStatus/server/sergate" "${server_file}/sergate"
-		mv "/tmp/ServerStatus/web" "${web_file}"
-	else
-		if [[ -e "${server_file}/sergate" ]]; then
-			mv "${server_file}/sergate" "${server_file}/sergate1"
-			mv "/tmp/ServerStatus/server/sergate" "${server_file}/sergate"
-		else
-			mv "/tmp/ServerStatus/server/sergate" "${server_file}/sergate"
-			mv "/tmp/ServerStatus/web" "${web_file}"
-		fi
-	fi
-	if [[ ! -e "${server_file}/sergate" ]]; then
-		echo -e "${Error} ServerStatus 服务端移动重命名失败 !"
-		[[ -e "${server_file}/sergate1" ]] && mv "${server_file}/sergate1" "${server_file}/sergate"
-		rm -rf "/tmp/ServerStatus"
-		exit 1
-	else
-		[[ -e "${server_file}/sergate1" ]] && rm -rf "${server_file}/sergate1"
-		rm -rf "/tmp/ServerStatus"
+	if [[ ! -e "/usr/local/ServerStatus/server/sergate" ]]; then
+		rm -rf "/usr/local/ServerStatus"
+		echo -e "${Error} ServerStatus 服务端编译失败 !" && exit 1
 	fi
 }
 Download_Server_Status_client(){

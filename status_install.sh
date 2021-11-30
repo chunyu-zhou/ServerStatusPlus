@@ -70,7 +70,7 @@ Read_config_client(){
 	else
 		update-rc.d -f status-plus-client remove
 	fi
-	rm -rf "/usr/local/ServerStatusPlus"
+	rm -rf "/usr/local/ServerStatusPlus/*"
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$action" > "/usr/local/ServerStatusPlus/config/token.conf"

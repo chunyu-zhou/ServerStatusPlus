@@ -248,7 +248,7 @@ def get_realtime_date():
 if __name__ == '__main__':
     for argc in sys.argv:
         if 'token' in argc:
-            token = argc.split('token=')[-1]
+            TOKEN = argc.split('token=')[-1]
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()

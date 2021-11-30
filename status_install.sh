@@ -76,7 +76,7 @@ Read_config_client(){
 	echo "$action" > "/usr/local/ServerStatusPlus/config/token.conf"
 	echo "$release" > "/usr/local/ServerStatusPlus/config/os_type.conf"
 	echo "$bit" > "/usr/local/ServerStatusPlus/config/os_bit.conf"
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/clients/status-plus-client.py"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/clients/client-linux.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi
@@ -84,14 +84,14 @@ Read_config_client(){
 }
 Service_Server_Status_client(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_centos" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_centos" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status
 		chkconfig --add status
 		chkconfig status on
 	else
-		if ! wget --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_debian" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_debian" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status

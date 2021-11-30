@@ -5,6 +5,9 @@ APIURL="https://baidu.com"
 INTERVAL = 1
 PORBEPORT = 80
 TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
+IPADDRESS = open("/usr/local/ServerStatusPlus/config/ipaddress.conf", "r").read().strip()
+OS = open("/usr/local/ServerStatusPlus/config/os_type.conf", "r").read().strip()
+OSBIT = open("/usr/local/ServerStatusPlus/config/os_bit.conf", "r").read().strip()
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
@@ -270,6 +273,9 @@ if __name__ == '__main__':
                 IP_STATUS = ip_status()
 
                 array = {}
+                array['ip_address'] = IPADDRESS
+                array['os'] = OS
+                array['os_bit'] = OSBIT
                 array['uptime'] = Uptime
                 array['load_1'] = Load_1
                 array['load_5'] = Load_5

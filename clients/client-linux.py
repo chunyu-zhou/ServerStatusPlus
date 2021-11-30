@@ -303,7 +303,9 @@ if __name__ == '__main__':
                     time.sleep(3)
                 except requests.exceptions.ChunkedEncodingError:
                     print('分块编码错误 -- 请等待3秒')
-                    time.sleep(3)    
+                    time.sleep(3)  
+                except KeyboardInterrupt:
+                    raise  
                 except:
                     print('未知错误, 请等待3秒')
                     time.sleep(3)

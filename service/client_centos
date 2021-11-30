@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME="ServerStatusPlus Client"
+NAME="ServerStatusPlus 客户端"
 NAME_BIN="status-plus-client.py"
 if [[ -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 	BIN="/usr/local/ServerStatusPlus/status-plus-client.py"

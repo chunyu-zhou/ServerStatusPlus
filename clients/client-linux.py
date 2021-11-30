@@ -258,49 +258,58 @@ if __name__ == '__main__':
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()
     while True:
-        CPU = get_cpu()
-        NET_IN, NET_OUT = liuliang()
-        Uptime = get_uptime()
-        Load_1, Load_5, Load_15 = os.getloadavg()
-        MemoryTotal, MemoryUsed, SwapTotal, SwapFree = get_memory()
-        HDDTotal, HDDUsed = get_hdd()
-        IP_STATUS = ip_status()
-
-        array = {}
-        array['uptime'] = Uptime
-        array['load_1'] = Load_1
-        array['load_5'] = Load_5
-        array['load_15'] = Load_15
-        array['memory_total'] = MemoryTotal
-        array['memory_used'] = MemoryUsed
-        array['swap_total'] = SwapTotal
-        array['swap_used'] = SwapTotal - SwapFree
-        array['hdd_total'] = HDDTotal
-        array['hdd_used'] = HDDUsed
-        array['cpu'] = CPU
-        array['network_rx'] = netSpeed.get("netrx")
-        array['network_tx'] = netSpeed.get("nettx")
-        array['network_in'] = NET_IN
-        array['network_out'] = NET_OUT
-        array['ip_status'] = IP_STATUS
-        array['ping_10010'] = lostRate.get('10010') * 100
-        array['ping_189'] = lostRate.get('189') * 100
-        array['ping_10086'] = lostRate.get('10086') * 100
-        array['time_10010'] = pingTime.get('10010')
-        array['time_189'] = pingTime.get('189')
-        array['time_10086'] = pingTime.get('10086')
-        array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
-        
-        
         try:
-            requests.post(APIURL, json.dumps(array),headers={"token":TOKEN}, timeout=5)  
-            break
-        except requests.exceptions.ConnectionError:
-            print('ConnectionError -- please wait 3 seconds')
+            print("Connecting...")
+            while True:
+                CPU = get_cpu()
+                NET_IN, NET_OUT = liuliang()
+                Uptime = get_uptime()
+                Load_1, Load_5, Load_15 = os.getloadavg()
+                MemoryTotal, MemoryUsed, SwapTotal, SwapFree = get_memory()
+                HDDTotal, HDDUsed = get_hdd()
+                IP_STATUS = ip_status()
+
+                array = {}
+                array['uptime'] = Uptime
+                array['load_1'] = Load_1
+                array['load_5'] = Load_5
+                array['load_15'] = Load_15
+                array['memory_total'] = MemoryTotal
+                array['memory_used'] = MemoryUsed
+                array['swap_total'] = SwapTotal
+                array['swap_used'] = SwapTotal - SwapFree
+                array['hdd_total'] = HDDTotal
+                array['hdd_used'] = HDDUsed
+                array['cpu'] = CPU
+                array['network_rx'] = netSpeed.get("netrx")
+                array['network_tx'] = netSpeed.get("nettx")
+                array['network_in'] = NET_IN
+                array['network_out'] = NET_OUT
+                array['ip_status'] = IP_STATUS
+                array['ping_10010'] = lostRate.get('10010') * 100
+                array['ping_189'] = lostRate.get('189') * 100
+                array['ping_10086'] = lostRate.get('10086') * 100
+                array['time_10010'] = pingTime.get('10010')
+                array['time_189'] = pingTime.get('189')
+                array['time_10086'] = pingTime.get('10086')
+                array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
+                
+                
+                try:
+                    requests.post(APIURL, json.dumps(array),headers={"token":TOKEN}, timeout=5)  
+                    break
+                except requests.exceptions.ConnectionError:
+                    print('连接到API错误 -- 请等待3秒')
+                    time.sleep(3)
+                except requests.exceptions.ChunkedEncodingError:
+                    print('分块编码错误 -- 请等待3秒')
+                    time.sleep(3)    
+                except:
+                    print('未知错误, 请等待3秒')
+                    time.sleep(3)
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print("捕获异常:", e)
             time.sleep(3)
-        except requests.exceptions.ChunkedEncodingError:
-            print('ChunkedEncodingError -- please wait 3 seconds')
-            time.sleep(3)    
-        except:
-            print('Unfortunitely -- An Unknow Error Happened, Please wait 3 seconds')
-            time.sleep(3)
+    

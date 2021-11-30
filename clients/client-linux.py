@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-APIURL=""
+APIURL="https://baidu.com"
 INTERVAL = 1
 PORBEPORT = 80
 TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
-print(TOKEN)
-exit()
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
@@ -250,7 +248,7 @@ def get_realtime_date():
 if __name__ == '__main__':
     for argc in sys.argv:
         if 'token' in argc:
-            token = argc.split('token=')[-1]
+            TOKEN = argc.split('token=')[-1]
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()

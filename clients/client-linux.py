@@ -8,6 +8,7 @@ TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip(
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
+PING_PACKET_HISTORY_LEN = 100
 
 import socket
 import time
@@ -290,5 +291,16 @@ if __name__ == '__main__':
         array['time_10086'] = pingTime.get('10086')
         array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
         
-        requests.post(APIURL, json.dumps(array),headers={"token":TOKEN})
-        time.sleep(3)
+        
+        try:
+            requests.post(APIURL, json.dumps(array),headers={"token":TOKEN}, timeout=5)  
+            break
+        except requests.exceptions.ConnectionError:
+            print('ConnectionError -- please wait 3 seconds')
+            time.sleep(3)
+        except requests.exceptions.ChunkedEncodingError:
+            print('ChunkedEncodingError -- please wait 3 seconds')
+            time.sleep(3)    
+        except:
+            print('Unfortunitely -- An Unknow Error Happened, Please wait 3 seconds')
+            time.sleep(3)

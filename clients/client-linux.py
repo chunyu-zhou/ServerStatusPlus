@@ -20,6 +20,10 @@ import errno
 import subprocess
 import threading
 import requests
+try:
+    from queue import Queue     # python3
+except ImportError:
+    from Queue import Queue     # python2
 
 def get_uptime():
     with open('/proc/uptime', 'r') as f:
@@ -286,5 +290,5 @@ if __name__ == '__main__':
         array['time_10086'] = pingTime.get('10086')
         array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
         
-        requests.post(APIURL, json.dumps(array),headers={"token":token})
+        requests.post(APIURL, json.dumps(array),headers={"token":TOKEN})
         time.sleep(3)

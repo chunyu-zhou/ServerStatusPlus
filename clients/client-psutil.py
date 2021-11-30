@@ -1,24 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Update by : https://github.com/cppla/ServerStatus
-# 依赖于psutil跨平台库
-# 支持Python版本：2.7 to 3.7
-# 支持操作系统： Linux, Windows, OSX, Sun Solaris, FreeBSD, OpenBSD and NetBSD, both 32-bit and 64-bit architectures
-# 时间： 20200407
-# 说明: 默认情况下修改server和user就可以了。丢包率监测方向可以自定义，例如：CU = "www.facebook.com"。
 
-SERVER = "127.0.0.1"
-USER = "s01"
-
-
-
-PORT = 35601
-PASSWORD = "USER_DEFAULT_PASSWORD"
+APIURL=""
 INTERVAL = 1
 PORBEPORT = 80
-CU = "cu.tz.cloudcpp.com"
-CT = "ct.tz.cloudcpp.com"
-CM = "cm.tz.cloudcpp.com"
+CU = "www.chinaunicom.com"
+CT = "www.189.cn"
+CM = "www.10086.cn"
 
 import socket
 import time
@@ -27,7 +15,9 @@ import os
 import json
 import psutil
 import sys
+import errno
 import threading
+import requests
 
 def get_uptime():
     return int(time.time() - psutil.boot_time())
@@ -140,27 +130,38 @@ netSpeed = {
 
 def _ping_thread(host, mark, port):
     lostPacket = 0
-    allPacket = 0
-    startTime = time.time()
+    packet_queue = Queue(maxsize=PING_PACKET_HISTORY_LEN)
+
+    IP = host
+    if host.count(':') < 1:     # if not plain ipv6 address, means ipv4 address or hostname
+        try:
+            if PROBE_PROTOCOL_PREFER == 'ipv4':
+                IP = socket.getaddrinfo(host, None, socket.AF_INET)[0][4][0]
+            else:
+                IP = socket.getaddrinfo(host, None, socket.AF_INET6)[0][4][0]
+        except Exception:
+                pass
 
     while True:
+        if packet_queue.full():
+            if packet_queue.get() == 0:
+                lostPacket -= 1
         try:
             b = timeit.default_timer()
-            socket.create_connection((host, port), timeout=1).close()
+            socket.create_connection((IP, port), timeout=1).close()
             pingTime[mark] = int((timeit.default_timer() - b) * 1000)
-        except:
-            lostPacket += 1
-        finally:
-            allPacket += 1
+            packet_queue.put(1)
+        except socket.error as error:
+            if error.errno == errno.ECONNREFUSED:
+                pingTime[mark] = int((timeit.default_timer() - b) * 1000)
+                packet_queue.put(1)
+            #elif error.errno == errno.ETIMEDOUT:
+            else:
+                lostPacket += 1
+                packet_queue.put(0)
 
-        if allPacket > 100:
-            lostRate[mark] = float(lostPacket) / allPacket
-
-        endTime = time.time()
-        if endTime - startTime > 3600:
-            lostPacket = 0
-            allPacket = 0
-            startTime = endTime
+        if packet_queue.qsize() > 30:
+            lostRate[mark] = float(lostPacket) / packet_queue.qsize()
 
         time.sleep(INTERVAL)
 
@@ -222,114 +223,46 @@ def get_realtime_date():
     t3.start()
     t4.start()
 
-def byte_str(object):
-    '''
-    bytes to str, str to bytes
-    :param object:
-    :return:
-    '''
-    if isinstance(object, str):
-        return object.encode(encoding="utf-8")
-    elif isinstance(object, bytes):
-        return bytes.decode(object)
-    else:
-        print(type(object))
-
 if __name__ == '__main__':
     for argc in sys.argv:
-        if 'SERVER' in argc:
-            SERVER = argc.split('SERVER=')[-1]
-        elif 'PORT' in argc:
-            PORT = int(argc.split('PORT=')[-1])
-        elif 'USER' in argc:
-            USER = argc.split('USER=')[-1]
-        elif 'PASSWORD' in argc:
-            PASSWORD = argc.split('PASSWORD=')[-1]
+        if 'token' in argc:
+            token = argc.split('token=')[-1]
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
-    socket.setdefaulttimeout(30)
     get_realtime_date()
-    while 1:
-        try:
-            print("Connecting...")
-            s = socket.create_connection((SERVER, PORT))
-            data = byte_str(s.recv(1024))
-            if data.find("Authentication required") > -1:
-                s.send(byte_str(USER + ':' + PASSWORD + '\n'))
-                data = byte_str(s.recv(1024))
-                if data.find("Authentication successful") < 0:
-                    print(data)
-                    raise socket.error
-            else:
-                print(data)
-                raise socket.error
+    while True:
+        CPU = get_cpu()
+        NET_IN, NET_OUT = liuliang()
+        Uptime = get_uptime()
+        Load_1, Load_5, Load_15 = os.getloadavg()
+        MemoryTotal, MemoryUsed, SwapTotal, SwapFree = get_memory()
+        HDDTotal, HDDUsed = get_hdd()
+        IP_STATUS = ip_status()
 
-            print(data)
-            if data.find("You are connecting via") < 0:
-                data = byte_str(s.recv(1024))
-                print(data)
-
-            timer = 0
-            check_ip = 0
-            if data.find("IPv4") > -1:
-                check_ip = 6
-            elif data.find("IPv6") > -1:
-                check_ip = 4
-            else:
-                print(data)
-                raise socket.error
-
-            while 1:
-                CPU = get_cpu()
-                NET_IN, NET_OUT = liuliang()
-                Uptime = get_uptime()
-                Load_1, Load_5, Load_15 = os.getloadavg() if 'linux' in sys.platform else (0.0, 0.0, 0.0)
-                MemoryTotal, MemoryUsed = get_memory()
-                SwapTotal, SwapUsed = get_swap()
-                HDDTotal, HDDUsed = get_hdd()
-                IP_STATUS = ip_status()
-
-                array = {}
-                if not timer:
-                    array['online' + str(check_ip)] = get_network(check_ip)
-                    timer = 10
-                else:
-                    timer -= 1*INTERVAL
-
-                array['uptime'] = Uptime
-                array['load_1'] = Load_1
-                array['load_5'] = Load_5
-                array['load_15'] = Load_15
-                array['memory_total'] = MemoryTotal
-                array['memory_used'] = MemoryUsed
-                array['swap_total'] = SwapTotal
-                array['swap_used'] = SwapUsed
-                array['hdd_total'] = HDDTotal
-                array['hdd_used'] = HDDUsed
-                array['cpu'] = CPU
-                array['network_rx'] = netSpeed.get("netrx")
-                array['network_tx'] = netSpeed.get("nettx")
-                array['network_in'] = NET_IN
-                array['network_out'] = NET_OUT
-                array['ip_status'] = IP_STATUS
-                array['ping_10010'] = lostRate.get('10010') * 100
-                array['ping_189'] = lostRate.get('189') * 100
-                array['ping_10086'] = lostRate.get('10086') * 100
-                array['time_10010'] = pingTime.get('10010')
-                array['time_189'] = pingTime.get('189')
-                array['time_10086'] = pingTime.get('10086')
-                array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
-
-                s.send(byte_str("update " + json.dumps(array) + "\n"))
-        except KeyboardInterrupt:
-            raise
-        except socket.error:
-            print("Disconnected...")
-            if 's' in locals().keys():
-                del s
-            time.sleep(3)
-        except Exception as e:
-            print("Caught Exception:", e)
-            if 's' in locals().keys():
-                del s
-            time.sleep(3)
+        array = {}
+        array['uptime'] = Uptime
+        array['load_1'] = Load_1
+        array['load_5'] = Load_5
+        array['load_15'] = Load_15
+        array['memory_total'] = MemoryTotal
+        array['memory_used'] = MemoryUsed
+        array['swap_total'] = SwapTotal
+        array['swap_used'] = SwapTotal - SwapFree
+        array['hdd_total'] = HDDTotal
+        array['hdd_used'] = HDDUsed
+        array['cpu'] = CPU
+        array['network_rx'] = netSpeed.get("netrx")
+        array['network_tx'] = netSpeed.get("nettx")
+        array['network_in'] = NET_IN
+        array['network_out'] = NET_OUT
+        array['ip_status'] = IP_STATUS
+        array['ping_10010'] = lostRate.get('10010') * 100
+        array['ping_189'] = lostRate.get('189') * 100
+        array['ping_10086'] = lostRate.get('10086') * 100
+        array['time_10010'] = pingTime.get('10010')
+        array['time_189'] = pingTime.get('189')
+        array['time_10086'] = pingTime.get('10086')
+        array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
+        
+        requests.post(APIURL, json.dumps(array),headers={"token":token})
+        time.sleep(3)

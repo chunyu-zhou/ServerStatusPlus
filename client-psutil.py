@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-APIURL="https://baidu.com"
+APIURL="http://cloud.onetools.cn/api/"
 INTERVAL = 1
 PORBEPORT = 80
 TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
@@ -12,6 +12,7 @@ CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
 PING_PACKET_HISTORY_LEN = 100
+PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
 
 import socket
 import time
@@ -241,13 +242,14 @@ if __name__ == '__main__':
     get_realtime_date()
     while True:
         try:
-            print("Connecting...")
+            # print("Connecting...")
             while True:
                 CPU = get_cpu()
                 NET_IN, NET_OUT = liuliang()
                 Uptime = get_uptime()
-                Load_1, Load_5, Load_15 = os.getloadavg()
-                MemoryTotal, MemoryUsed, SwapTotal, SwapFree = get_memory()
+                Load_1, Load_5, Load_15 = os.getloadavg() if 'linux' in sys.platform else (0.0, 0.0, 0.0)
+                MemoryTotal, MemoryUsed = get_memory()
+                SwapTotal, SwapUsed = get_swap()
                 HDDTotal, HDDUsed = get_hdd()
                 IP_STATUS = ip_status()
 
@@ -262,7 +264,7 @@ if __name__ == '__main__':
                 array['memory_total'] = MemoryTotal
                 array['memory_used'] = MemoryUsed
                 array['swap_total'] = SwapTotal
-                array['swap_used'] = SwapTotal - SwapFree
+                array['swap_used'] = SwapUsed
                 array['hdd_total'] = HDDTotal
                 array['hdd_used'] = HDDUsed
                 array['cpu'] = CPU
@@ -281,7 +283,8 @@ if __name__ == '__main__':
                 
                 
                 try:
-                    requests.post(APIURL, json.dumps(array),headers={"token":TOKEN}, timeout=5)  
+                    requests.post(APIURL, data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+                    # print('ok....')
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')

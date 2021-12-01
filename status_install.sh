@@ -32,13 +32,17 @@ Installation_dependency(){
 		if [[ -z ${python_status} ]]; then
 			yum update
 			yum install -y python
+			yum -y install epel-release
+			yum install python-pip
 		fi
 	else
 		if [[ -z ${python_status} ]]; then
 			apt-get update
 			apt-get install -y python
+			apt-get install-y python-pip
 		fi
 	fi
+	pip install psutil
 }
 Install_ServerStatus_client(){
 	if [[ ${release} == "centos" ]]; then
@@ -76,7 +80,7 @@ Read_config_client(){
 	echo "$action" > "/usr/local/ServerStatusPlus/config/token.conf"
 	echo "$release" > "/usr/local/ServerStatusPlus/config/os_type.conf"
 	echo "$bit" > "/usr/local/ServerStatusPlus/config/os_bit.conf"
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/clients/client-linux.py"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi

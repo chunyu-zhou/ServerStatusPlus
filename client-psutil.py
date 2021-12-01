@@ -16,12 +16,11 @@ PING_PACKET_HISTORY_LEN = 100
 import socket
 import time
 import timeit
-import re
 import os
-import sys
 import json
+import psutil
+import sys
 import errno
-import subprocess
 import threading
 import requests
 try:
@@ -30,71 +29,46 @@ except ImportError:
     from Queue import Queue     # python2
 
 def get_uptime():
-    with open('/proc/uptime', 'r') as f:
-        uptime = f.readline().split('.', 2)
-        return int(uptime[0])
+    return int(time.time() - psutil.boot_time())
 
 def get_memory():
-    re_parser = re.compile(r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB')
-    result = dict()
-    for line in open('/proc/meminfo'):
-        match = re_parser.match(line)
-        if not match:
-            continue
-        key, value = match.groups(['key', 'value'])
-        result[key] = int(value)
-    MemTotal = float(result['MemTotal'])
-    MemUsed = MemTotal-float(result['MemFree'])-float(result['Buffers'])-float(result['Cached'])-float(result['SReclaimable'])
-    SwapTotal = float(result['SwapTotal'])
-    SwapFree = float(result['SwapFree'])
-    return int(MemTotal), int(MemUsed), int(SwapTotal), int(SwapFree)
+    Mem = psutil.virtual_memory()
+    return int(Mem.total / 1024.0), int(Mem.used / 1024.0)
+
+def get_swap():
+    Mem = psutil.swap_memory()
+    return int(Mem.total/1024.0), int(Mem.used/1024.0)
 
 def get_hdd():
-    p = subprocess.check_output(['df', '-Tlm', '--total', '-t', 'ext4', '-t', 'ext3', '-t', 'ext2', '-t', 'reiserfs', '-t', 'jfs', '-t', 'ntfs', '-t', 'fat32', '-t', 'btrfs', '-t', 'fuseblk', '-t', 'zfs', '-t', 'simfs', '-t', 'xfs']).decode("Utf-8")
-    total = p.splitlines()[-1]
-    used = total.split()[3]
-    size = total.split()[2]
-    return int(size), int(used)
-
-def get_time():
-    with open("/proc/stat", "r") as f:
-        time_list = f.readline().split(' ')[2:6]
-        for i in range(len(time_list))  :
-            time_list[i] = int(time_list[i])
-        return time_list
-
-def delta_time():
-    x = get_time()
-    time.sleep(INTERVAL)
-    y = get_time()
-    for i in range(len(x)):
-        y[i]-=x[i]
-    return y
+    valid_fs = [ "ext4", "ext3", "ext2", "reiserfs", "jfs", "btrfs", "fuseblk", "zfs", "simfs", "ntfs", "fat32", "exfat", "xfs" ]
+    disks = dict()
+    size = 0
+    used = 0
+    for disk in psutil.disk_partitions():
+        if not disk.device in disks and disk.fstype.lower() in valid_fs:
+            disks[disk.device] = disk.mountpoint
+    for disk in disks.values():
+        usage = psutil.disk_usage(disk)
+        size += usage.total
+        used += usage.used
+    return int(size/1024.0/1024.0), int(used/1024.0/1024.0)
 
 def get_cpu():
-    t = delta_time()
-    st = sum(t)
-    if st == 0:
-        st = 1
-    result = 100-(t[len(t)-1]*100.00/st)
-    return round(result, 1)
+    return psutil.cpu_percent(interval=INTERVAL)
 
 def liuliang():
     NET_IN = 0
     NET_OUT = 0
-    with open('/proc/net/dev') as f:
-        for line in f.readlines():
-            netinfo = re.findall('([^\s]+):[\s]{0,}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)', line)
-            if netinfo:
-                if netinfo[0][0] == 'lo' or 'tun' in netinfo[0][0] \
-                        or 'docker' in netinfo[0][0] or 'veth' in netinfo[0][0] \
-                        or 'br-' in netinfo[0][0] or 'vmbr' in netinfo[0][0] \
-                        or 'vnet' in netinfo[0][0] or 'kube' in netinfo[0][0] \
-                        or netinfo[0][1]=='0' or netinfo[0][9]=='0':
-                    continue
-                else:
-                    NET_IN += int(netinfo[0][1])
-                    NET_OUT += int(netinfo[0][9])
+    net = psutil.net_io_counters(pernic=True)
+    for k, v in net.items():
+        if 'lo' in k or 'tun' in k \
+                or 'docker' in k or 'veth' in k \
+                or 'br-' in k or 'vmbr' in k \
+                or 'vnet' in k or 'kube' in k:
+            continue
+        else:
+            NET_IN += v[1]
+            NET_OUT += v[0]
     return NET_IN, NET_OUT
 
 def tupd():
@@ -102,15 +76,24 @@ def tupd():
     tcp, udp, process, thread count: for view ddcc attack , then send warning
     :return:
     '''
-    s = subprocess.check_output("ss -t|wc -l", shell=True)
-    t = int(s[:-1])-1
-    s = subprocess.check_output("ss -u|wc -l", shell=True)
-    u = int(s[:-1])-1
-    s = subprocess.check_output("ps -ef|wc -l", shell=True)
-    p = int(s[:-1])-2
-    s = subprocess.check_output("ps -eLf|wc -l", shell=True)
-    d = int(s[:-1])-2
-    return t,u,p,d
+    try:
+        if sys.platform.startswith("linux") is True:
+            t = int(os.popen('ss -t|wc -l').read()[:-1])-1
+            u = int(os.popen('ss -u|wc -l').read()[:-1])-1
+            p = int(os.popen('ps -ef|wc -l').read()[:-1])-2
+            d = int(os.popen('ps -eLf|wc -l').read()[:-1])-2
+        elif sys.platform.startswith("win") is True:
+            t = int(os.popen('netstat -an|find "TCP" /c').read()[:-1])-1
+            u = int(os.popen('netstat -an|find "UDP" /c').read()[:-1])-1
+            p = len(psutil.pids())
+            d = 0
+            # cpu is high, default: 0
+            # d = sum([psutil.Process(k).num_threads() for k in [x for x in psutil.pids()]])
+        else:
+            t,u,p,d = 0,0,0,0
+        return t,u,p,d
+    except:
+        return 0,0,0,0
 
 def ip_status():
     ip_check = 0
@@ -193,27 +176,23 @@ def _ping_thread(host, mark, port):
 
 def _net_speed():
     while True:
-        with open("/proc/net/dev", "r") as f:
-            net_dev = f.readlines()
-            avgrx = 0
-            avgtx = 0
-            for dev in net_dev[2:]:
-                dev = dev.split(':')
-                if "lo" in dev[0] or "tun" in dev[0] \
-                        or "docker" in dev[0] or "veth" in dev[0] \
-                        or "br-" in dev[0] or "vmbr" in dev[0] \
-                        or "vnet" in dev[0] or "kube" in dev[0]:
-                    continue
-                dev = dev[1].split()
-                avgrx += int(dev[0])
-                avgtx += int(dev[8])
-            now_clock = time.time()
-            netSpeed["diff"] = now_clock - netSpeed["clock"]
-            netSpeed["clock"] = now_clock
-            netSpeed["netrx"] = int((avgrx - netSpeed["avgrx"]) / netSpeed["diff"])
-            netSpeed["nettx"] = int((avgtx - netSpeed["avgtx"]) / netSpeed["diff"])
-            netSpeed["avgrx"] = avgrx
-            netSpeed["avgtx"] = avgtx
+        avgrx = 0
+        avgtx = 0
+        for name, stats in psutil.net_io_counters(pernic=True).items():
+            if "lo" in name or "tun" in name \
+                    or "docker" in name or "veth" in name \
+                    or "br-" in name or "vmbr" in name \
+                    or "vnet" in name or "kube" in name:
+                continue
+            avgrx += stats.bytes_recv
+            avgtx += stats.bytes_sent
+        now_clock = time.time()
+        netSpeed["diff"] = now_clock - netSpeed["clock"]
+        netSpeed["clock"] = now_clock
+        netSpeed["netrx"] = int((avgrx - netSpeed["avgrx"]) / netSpeed["diff"])
+        netSpeed["nettx"] = int((avgtx - netSpeed["avgtx"]) / netSpeed["diff"])
+        netSpeed["avgrx"] = avgrx
+        netSpeed["avgtx"] = avgtx
         time.sleep(INTERVAL)
 
 def get_realtime_date():

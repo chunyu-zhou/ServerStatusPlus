@@ -29,15 +29,17 @@ check_sys(){
 Installation_dependency(){
 	python_status=$(python --help)
 	if [[ ${release} == "centos" ]]; then
-		yum install -y python
 		yum -y install epel-release
+		yum -y install python3-pip
+		yum -y install gcc
+		yum -y install python3-devel
 		yum -y install python-pip
 	else
 		apt-get update
-		apt-get install -y python
-		apt-get install-y python-pip
+		apt-get install -y python3
+		apt-get install-y python3-pip
 	fi
-	pip install psutil
+	pip3 install psutil
 }
 Install_ServerStatus_client(){
 	if [[ ${release} == "centos" ]]; then

@@ -29,18 +29,13 @@ check_sys(){
 Installation_dependency(){
 	python_status=$(python --help)
 	if [[ ${release} == "centos" ]]; then
-		if [[ -z ${python_status} ]]; then
-			yum update
-			yum install -y python
-			yum -y install epel-release
-			yum install python-pip
-		fi
+		yum install -y python
+		yum -y install epel-release
+		yum -y install python-pip
 	else
-		if [[ -z ${python_status} ]]; then
-			apt-get update
-			apt-get install -y python
-			apt-get install-y python-pip
-		fi
+		apt-get update
+		apt-get install -y python
+		apt-get install-y python-pip
 	fi
 	pip install psutil
 }
@@ -84,7 +79,6 @@ Read_config_client(){
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/ipaddress.conf" "https://get.geojs.io/v1/ip"
 }
 Service_Server_Status_client(){
 	if [[ ${release} = "centos" ]]; then

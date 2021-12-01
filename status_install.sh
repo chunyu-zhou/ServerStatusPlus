@@ -30,10 +30,10 @@ Installation_dependency(){
 	python_status=$(python --help)
 	if [[ ${release} == "centos" ]]; then
 		yum -y install epel-release
-		yum -y install python3-pip
+		yum -y install python3
 		yum -y install gcc
 		yum -y install python3-devel
-		yum -y install python-pip
+		yum -y install python3-pip
 	else
 		apt-get update
 		apt-get install -y python3

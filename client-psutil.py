@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-APIURL="http://cloud.onetools.cn/api/"
+APIURL="http://cloud.onetools.cn/api/monitor"
 INTERVAL = 1
 PORBEPORT = 80
 TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()

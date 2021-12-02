@@ -237,11 +237,11 @@ def get_realtime_date():
 
 def get_ip():
     try:
-        IPV4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5, verify=False).text.strip()
+        IPV4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5).text.strip()
     except:
         IPV4 = ''
     try:
-        IPV6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5, verify=False).text.strip()
+        IPV6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
     except:
         IPV6 = ''
 

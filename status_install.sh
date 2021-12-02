@@ -39,6 +39,7 @@ Installation_dependency(){
 		apt-get install -y python3
 		apt-get install-y python3-pip
 	fi
+	pip3 install requests
 	pip3 install psutil
 }
 Install_ServerStatus_client(){

@@ -259,9 +259,7 @@ if __name__ == '__main__':
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()
-    # get_ip()
-    print(get_ip())
-    exit()
+    IPV4, IPV6 = get_ip()
     while True:
         try:
             # print("Connecting...")
@@ -274,13 +272,13 @@ if __name__ == '__main__':
                 SwapTotal, SwapUsed = get_swap()
                 HDDTotal, HDDUsed = get_hdd()
                 IP_STATUS = ip_status()
-
-                array = {}
                 if GETIPTIME <= 0:
-                    get_ip()
+                    IPV4, IPV6 = get_ip()
                     GETIPTIME = 10
                 else:
                     GETIPTIME -= 1
+
+                array = {}
                 array['ipv4'] = IPV4
                 array['ipv6'] = IPV6
                 array['os'] = OS

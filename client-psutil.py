@@ -10,6 +10,9 @@ OSBIT = open("/usr/local/ServerStatusPlus/config/os_bit.conf", "r").read().strip
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
+GETIPTIME = 10
+IPV4 = ''
+IPV6 = ''
 PING_PACKET_HISTORY_LEN = 100
 PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
 
@@ -232,6 +235,10 @@ def get_realtime_date():
     t3.start()
     t4.start()
 
+def get_ip():
+    IPV4 = requests.get('https://api-ipv4.ip.sb/ip', timeout=5).text.strip()
+    IPV6 = requests.get('https://api-ipv6.ip.sb/ip', timeout=5).text.strip()
+
 if __name__ == '__main__':
     for argc in sys.argv:
         if 'token' in argc:
@@ -239,6 +246,7 @@ if __name__ == '__main__':
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()
+    get_ip()
     while True:
         try:
             # print("Connecting...")
@@ -253,8 +261,13 @@ if __name__ == '__main__':
                 IP_STATUS = ip_status()
 
                 array = {}
-                array['ipv4'] = requests.get('https://api-ipv4.ip.sb/ip', timeout=5).strip()
-                array['ipv6'] = requests.get('https://api-ipv6.ip.sb/ip', timeout=5).strip()
+                if GETIPTIME <= 0:
+                    get_ip()
+                    GETIPTIME = 10
+                else:
+                    GETIPTIME -= 1
+                array['ipv4'] = IPV4
+                array['ipv6'] = IPV6
                 array['os'] = OS
                 array['os_bit'] = OSBIT
                 array['uptime'] = Uptime

@@ -236,8 +236,8 @@ def get_realtime_date():
     t4.start()
 
 def get_ip():
-    IPV4 = requests.get('https://api-ipv4.ip.sb/ip', timeout=5).text.strip()
-    IPV6 = requests.get('https://api-ipv6.ip.sb/ip', timeout=5).text.strip()
+    IPV4 = requests.get('https://api-ipv4.ip.sb/ip', timeout=5, verify=False).text.strip()
+    IPV6 = requests.get('https://api-ipv6.ip.sb/ip', timeout=5, verify=False).text.strip()
 
 if __name__ == '__main__':
     for argc in sys.argv:

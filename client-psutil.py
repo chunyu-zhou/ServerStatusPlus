@@ -239,11 +239,17 @@ def get_ip():
     try:
         IPV4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5).text.strip()
     except:
-        IPV4 = ''
+        try:
+            IPV4 = requests.get("https://ip4.seeip.org", timeout=5, verify=False).text.strip()
+        except:
+            IPV4 = ''
     try:
         IPV6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
     except:
-        IPV6 = ''
+        try:
+            IPV6 = requests.get("https://ip6.seeip.org", timeout=5, verify=False).text.strip()
+        except:
+            IPV6 = ''
 
 if __name__ == '__main__':
     for argc in sys.argv:

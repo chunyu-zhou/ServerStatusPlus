@@ -237,19 +237,20 @@ def get_realtime_date():
 
 def get_ip():
     try:
-        IPV4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5).text.strip()
+        ip4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5).text.strip()
     except:
         try:
-            IPV4 = requests.get("https://ip4.seeip.org", timeout=5, verify=False).text.strip()
+            ip4 = requests.get("https://ip4.seeip.org", timeout=5, verify=False).text.strip()
         except:
-            IPV4 = ''
+            ip4 = ''
     try:
-        IPV6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
+        ip6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
     except:
         try:
-            IPV6 = requests.get("https://ip6.seeip.org", timeout=5, verify=False).text.strip()
+            ip6 = requests.get("https://ip6.seeip.org", timeout=5, verify=False).text.strip()
         except:
-            IPV6 = ''
+            ip6 = ''
+    return ip4, ip6
 
 if __name__ == '__main__':
     for argc in sys.argv:
@@ -258,7 +259,9 @@ if __name__ == '__main__':
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
     get_realtime_date()
-    get_ip()
+    # get_ip()
+    print(get_ip())
+    exit()
     while True:
         try:
             # print("Connecting...")

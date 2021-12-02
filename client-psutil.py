@@ -5,7 +5,6 @@ APIURL="http://cloud.onetools.cn/api/monitor"
 INTERVAL = 1
 PORBEPORT = 80
 TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
-IPADDRESS = open("/usr/local/ServerStatusPlus/config/ipaddress.conf", "r").read().strip()
 OS = open("/usr/local/ServerStatusPlus/config/os_type.conf", "r").read().strip()
 OSBIT = open("/usr/local/ServerStatusPlus/config/os_bit.conf", "r").read().strip()
 CU = "www.chinaunicom.com"
@@ -254,7 +253,8 @@ if __name__ == '__main__':
                 IP_STATUS = ip_status()
 
                 array = {}
-                array['ip_address'] = IPADDRESS
+                array['ipv4'] = requests.get('https://api-ipv4.ip.sb/ip', timeout=5).strip()
+                array['ipv6'] = requests.get('https://api-ipv6.ip.sb/ip', timeout=5).strip()
                 array['os'] = OS
                 array['os_bit'] = OSBIT
                 array['uptime'] = Uptime

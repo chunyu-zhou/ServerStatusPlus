@@ -34,13 +34,17 @@ Installation_dependency(){
 		yum -y install gcc
 		yum -y install python3-devel
 		yum -y install python3-pip
+		yum -y install wget
 	else
 		apt-get update
 		apt-get install -y python3
 		apt-get install-y python3-pip
+		apt-get install-y wget
 	fi
 	pip3 install requests
 	pip3 install psutil
+	pip3 install wmi
+	pip3 install cachelib
 }
 Install_ServerStatus_client(){
 	if [[ ${release} == "centos" ]]; then
@@ -76,8 +80,7 @@ Read_config_client(){
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$action" > "/usr/local/ServerStatusPlus/config/token.conf"
-	echo "$release" > "/usr/local/ServerStatusPlus/config/os_type.conf"
-	echo "$bit" > "/usr/local/ServerStatusPlus/config/os_bit.conf"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1

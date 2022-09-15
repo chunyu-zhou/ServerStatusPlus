@@ -293,10 +293,10 @@ def GetMemInfoUnix() -> Dict[str, int]:
     '''
     mem = psutil.virtual_memory()
     memInfo: dict = {
-        'memTotal': ToSizeInt(mem.total, 'MB'),
-        'memFree': ToSizeInt(mem.free, 'MB'),
-        'memBuffers': ToSizeInt(mem.buffers, 'MB'),
-        'memCached': ToSizeInt(mem.cached, 'MB'),
+        'memTotal': ToSizeInt(mem.total, 'KB'),
+        'memFree': ToSizeInt(mem.free, 'KB'),
+        'memBuffers': ToSizeInt(mem.buffers, 'KB'),
+        'memCached': ToSizeInt(mem.cached, 'KB'),
     }
     memInfo['memRealUsed'] = \
         memInfo['memTotal'] - \
@@ -319,9 +319,9 @@ def GetMemInfoWindows() -> dict:
     '''
     mem = psutil.virtual_memory()
     memInfo: dict = {
-        'memTotal': ToSizeInt(mem.total, 'MB'),
-        'memFree': ToSizeInt(mem.free, 'MB'),
-        'memRealUsed': ToSizeInt(mem.used, 'MB'),
+        'memTotal': ToSizeInt(mem.total, 'KB'),
+        'memFree': ToSizeInt(mem.free, 'KB'),
+        'memRealUsed': ToSizeInt(mem.used, 'KB'),
         'menUsedPercent': mem.used / mem.total * 100
     }
 
@@ -1213,11 +1213,11 @@ def get_uptime():
 
 def get_memory():
     Mem = psutil.virtual_memory()
-    return int(Mem.total / 1024.0), int(Mem.used / 1024.0)
+    return int(Mem.total), int(Mem.used)
 
 def get_swap():
     Mem = psutil.swap_memory()
-    return int(Mem.total/1024.0), int(Mem.used/1024.0)
+    return int(Mem.total), int(Mem.used)
 
 def get_hdd():
     valid_fs = [ "ext4", "ext3", "ext2", "reiserfs", "jfs", "btrfs", "fuseblk", "zfs", "simfs", "ntfs", "fat32", "exfat", "xfs" ]
@@ -1231,7 +1231,7 @@ def get_hdd():
         usage = psutil.disk_usage(disk)
         size += usage.total
         used += usage.used
-    return int(size/1024.0/1024.0), int(used/1024.0/1024.0)
+    return int(size), int(used)
 
 def get_cpu():
     return psutil.cpu_percent(interval=INTERVAL)
@@ -1414,10 +1414,10 @@ def get_realtime_date():
 
 def get_ip():
     try:
-        ip4 = requests.get("http://api-ipv4.ip.sb/ip", timeout=5).text.strip()
+        ip4 = requests.get("https://api.myip.la", timeout=5).text.strip()
     except:
         try:
-            ip4 = requests.get("https://api.myip.la", timeout=5, verify=False).text.strip()
+            ip4 = requests.get("https://ifconfig.me", timeout=5, verify=False).text.strip()
         except:
             ip4 = ''
     try:
@@ -1438,43 +1438,49 @@ def async(f):
 @async
 def check_upgrade():
     print('检测更新...')
-    version = requests.get(APIURL+'monitor/version', timeout=5).text.strip()
+    version = requests.get(APIURL+'api/config/version', timeout=5).text.strip()
     BASH_VERSION = open("/usr/local/ServerStatusPlus/config/version", "r").read().strip()
     if version != BASH_VERSION:
+        print('需要更新，最新版本：{} 当前版本：{}'.format(version,BASH_VERSION))
         cmd='wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py" && /etc/init.d/status restart && /etc/init.d/status status'
         os.system(cmd)
+    else:
+        print('不需要更新，当前版本：{}'.format(BASH_VERSION))
     time.sleep(UPGRDETIME)
     check_upgrade()
 
 def check_alive(ip):
-    result = ping_tool.ping(ip)
+    ping_result = None
+    ping_result = ping_tool.ping(ip)
     
     ping_data = {}
-    ping_data['max_rtt'] = result.max_rtt
-    ping_data['min_rtt'] = result.min_rtt
-    ping_data['avg_rtt'] = result.avg_rtt
-    ping_data['packet_lost'] = result.packet_lost
-    ping_data['ret_code'] = result.ret_code
-    ping_data['packet_size'] = result.packet_size
-    ping_data['timeout'] = result.timeout
-    ping_data['dest'] = result.dest
-    ping_data['dest_ip'] = result.dest_ip
-    data = {}
-    data['from_ip_v4'] = IPV4
-    data['from_ip_v6'] = IPV6
-    data['ping_data'] = ping_data
-    requests.post(APIURL+'monitor/index', data={'data':json.dumps(data)},headers={"token":TOKEN}, timeout=5)
+    ping_data['max_rtt'] = ping_result.max_rtt
+    ping_data['min_rtt'] = ping_result.min_rtt
+    ping_data['avg_rtt'] = ping_result.avg_rtt
+    ping_data['packet_lost'] = ping_result.packet_lost
+    ping_data['ret_code'] = ping_result.ret_code
+    ping_data['packet_size'] = ping_result.packet_size
+    ping_data['timeout'] = ping_result.timeout
+    ping_data['dest'] = ping_result.dest
+    ping_data['dest_ip'] = ping_result.dest_ip
+    ping_data['from_ip_v4'] = IPV4
+    ping_data['from_ip_v6'] = IPV6
+    
+    print(json.dumps(ping_data))
+    # ping_data['ping_data'] = json.loads(ping_result)
+    res = requests.post(APIURL+'api/monitor/ping_data', data={'data':json.dumps(ping_data)},headers={"token":TOKEN}, timeout=5)
+    # print(res.text)
         
 @async
 def get_ping():
-    # ping_hosts = requests.get(APIURL+'monitor/ping_hosts', timeout=5).text.strip()
-    # print(ping_hosts.split(',').len)
-    # exit()
-    ping_hosts = ['baidu.com','jp.bwh.server.cloudflarecdn.xyz','154.3.36.28']
-    for i in ping_hosts:
-        p = threading.Thread(target=check_alive, args=(i,))
-        p.setDaemon(True)
-        p.start()
+    ping_hosts = requests.get(APIURL+'api/monitor/ping_hosts',headers={"token":TOKEN}, timeout=5).json()
+    if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
+        ping_ips = ping_hosts['data']
+        for i in ping_ips:
+            p = threading.Thread(target=check_alive, args=(i,))
+            p.setDaemon(True)
+            p.start()
+            
     time.sleep(PINGTIME)
     get_ping()
 
@@ -1493,12 +1499,12 @@ def os_bits(machine=machine()):
 
 @async
 def getOsInfo():
-    MemoryTotal, MemoryUsed = get_memory()
     SwapTotal, SwapUsed = get_swap()
     HDDTotal, HDDUsed = get_hdd()
     os_dist = platform.dist()
     CpuConstants = GetCpuConstants()
-    IPV4, IPV6 = get_ip()
+    MemInfo = GetMemInfo()
+    # IPV4, IPV6 = get_ip()
     
     array = {}
     array['cpu'] = psutil.cpu_count(logical=False) # CPU物理核心
@@ -1513,16 +1519,14 @@ def getOsInfo():
     array['platform'] = platform.platform(True)
     array['host_name'] = getHostname()
     array['cpu_name'] = CpuConstants['cpu_name']
-    array['memory_total'] = MemoryTotal
+    array['memory_total'] = MemInfo['memTotal']*1024
     array['swap_total'] = SwapTotal
-    array['hdd_total'] = HDDTotal
+    array['disk_total'] = HDDTotal
     array['ipv4'] = IPV4
     array['ipv6'] = IPV6
-    print(array)
-    exit()
-    
     try:
-        requests.post(APIURL+'monitor/set_system_info', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+        res = requests.post(APIURL+'api/monitor/set_system_info', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+        # print(res.text)
     except requests.exceptions.ConnectionError:
         print('连接到API错误 -- 请等待3秒')
         time.sleep(3)
@@ -1547,7 +1551,7 @@ def get_os_more_info():
                 SwapTotal, SwapUsed = get_swap()
                 HDDTotal, HDDUsed = get_hdd()
                 IP_STATUS = ip_status()
-
+            
                 array = {}
                 array['uptime'] = Uptime
                 array['load_1'] = Load_1
@@ -1565,10 +1569,9 @@ def get_os_more_info():
                 array['ip_status'] = IP_STATUS
                 array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
                 
-                
                 try:
-                    requests.post(APIURL+'monitor/set_system_info', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
-                    # print(res.text,'ok....')
+                    res = requests.post(APIURL+'api/monitor/monitor_log', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+                    # print(res.text)
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')
@@ -1587,16 +1590,40 @@ def get_os_more_info():
             print("捕获异常:", e)
             time.sleep(3)
 
+@async
+def get_ip_info():
+    # res = requests.get("https://ifconfig.me", timeout=5)
+    # ip = res.text.strip()
+    # ip_info = requests.get('https://api.ip.sb/geoip').json()
+    
+    ip_info = requests.get('https://ipapi.co/json/').json()
+    if 'ip' in ip_info:
+        # ipip_res = requests.get('https://api.myip.la/en?json').json()
+        # ip_info['country_code'] = ipip_res['location']['country_code']
+        # ip_info['country_name'] = ipip_res['location']['country_name']
+        # ip_info['country_name'] = ipip_res['location']['country_name']
+        res2 = requests.post(APIURL+'api/monitor/set_ip_info', data={'data':json.dumps(ip_info)},headers={"token":TOKEN}, timeout=5)
+        # print(res2.text)
+    else:
+        print('ip获取失败')
+        time.sleep(3600)
+        get_ip_info()
+    
+
 if __name__ == '__main__':
     for argc in sys.argv:
         if 'token' in argc:
             TOKEN = argc.split('token=')[-1]
         elif 'INTERVAL' in argc:
             INTERVAL = int(argc.split('INTERVAL=')[-1])
-            
-    # check_upgrade()
-    # get_realtime_date()
+    
+    if len(IPV4)==0 and len(IPV6)==0:
+        IPV4, IPV6 = get_ip()
+
+    check_upgrade()
+    get_ip_info()
+    get_realtime_date()
     getOsInfo()
-    # get_ping()
-    # get_os_more_info()
+    get_ping()
+    get_os_more_info()
     

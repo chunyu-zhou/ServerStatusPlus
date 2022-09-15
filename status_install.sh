@@ -79,9 +79,9 @@ Read_config_client(){
 	rm -rf "/usr/local/ServerStatusPlus/*"
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
-	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/token.conf"
-	echo "$GroupToken" > "/usr/local/ServerStatusPlus/config/token.conf"
-	echo "$host" > "/usr/local/ServerStatusPlus/config/token.conf"
+	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
+	echo "$GroupToken" > "/usr/local/ServerStatusPlus/config/GroupToken.conf"
+	echo "$host" > "/usr/local/ServerStatusPlus/config/host.conf"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then

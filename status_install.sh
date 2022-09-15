@@ -79,7 +79,9 @@ Read_config_client(){
 	rm -rf "/usr/local/ServerStatusPlus/*"
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
-	echo "$action" > "/usr/local/ServerStatusPlus/config/token.conf"
+	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/token.conf"
+	echo "$GroupToken" > "/usr/local/ServerStatusPlus/config/token.conf"
+	echo "$host" > "/usr/local/ServerStatusPlus/config/token.conf"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
@@ -147,9 +149,36 @@ View_client_Log(){
 	echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${client_log_file}${Font_color_suffix} 命令。" && echo
 	tail -f ${client_log_file}
 }
-action=$1
-if [ ${#action} != 32 ] ; then
-	echo -e "${Error} Token错误，请检查 !" && exit 1
+# action=$1
+# if [ ${#action} != 32 ] ; then
+# 	echo -e "${Error} Token错误，请检查 !" && exit 1
+# fi
+while getopts ":s:g:h:" opt
+do
+    case $opt in
+        s)
+        echo "参数sk的值$OPTARG"
+        ServerToken=$OPTARG
+        ;;
+        g)
+        echo "参数gk的值$OPTARG"
+        GroupToken=$OPTARG
+        ;;
+        h)
+        echo "参数host的值$OPTARG"
+        host=$OPTARG
+        ;;
+        ?)
+        echo "参数错误"
+        exit 1;;
+    esac
+done
+
+if [ ${#ServerToken} != 32 ] ; then
+	echo -e "${Error} ServerToken错误，请检查 !" && exit 1
+fi
+if [ ${#GroupToken} != 32 ] ; then
+	echo -e "${Error} GroupToken错误，请检查 !" && exit 1
 fi
 
 check_sys

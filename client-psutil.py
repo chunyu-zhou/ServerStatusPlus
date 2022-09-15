@@ -18,10 +18,16 @@ import hashlib
 import re
 from cachelib import SimpleCache
 
-APIURL="http://cloud.onetools.cn/"
+APIDOMAIN=open("/usr/local/ServerStatusPlus/config/host.conf", "r").read().strip()
+if not APIDOMAIN.startswith('http://') and not APIDOMAIN.startswith('https://'):
+    print('API地址错误，请检查！')
+    exit()
+    
 INTERVAL = 1
 PORBEPORT = 80
-TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
+USERTOKEN = open("/usr/local/ServerStatusPlus/config/UserToken.conf", "r").read().strip()
+SERVERTOKEN = open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
+GROUPTOKEN = open("/usr/local/ServerStatusPlus/config/GroupToken.conf", "r").read().strip()
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
@@ -46,6 +52,15 @@ if sys.platform.startswith("win32"):
     timer = time.clock
 else:
     timer = time.time
+
+def request_fun(path,data,request_type):
+    request_type == request_type.lower()
+    APIURL = "{}{}?server_token={}&group_token={}&user_token={}".format(APIDOMAIN,path,SERVERTOKEN,GROUPTOKEN,USERTOKEN)
+    if request_type == 'get':
+        res = requests.get(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+    elif request_type == 'post':
+        res = requests.post(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+    return res
 
 class CpuConstants:
     def __init__(self):
@@ -1438,7 +1453,7 @@ def async(f):
 @async
 def check_upgrade():
     print('检测更新...')
-    version = requests.get(APIURL+'api/config/version', timeout=5).text.strip()
+    version = request_fun('/api/config/version', {},'get').text.strip()
     BASH_VERSION = open("/usr/local/ServerStatusPlus/config/version", "r").read().strip()
     if version != BASH_VERSION:
         print('需要更新，最新版本：{} 当前版本：{}'.format(version,BASH_VERSION))
@@ -1466,14 +1481,14 @@ def check_alive(ip):
     ping_data['from_ip_v4'] = IPV4
     ping_data['from_ip_v6'] = IPV6
     
-    print(json.dumps(ping_data))
+    # print(json.dumps(ping_data))
     # ping_data['ping_data'] = json.loads(ping_result)
-    res = requests.post(APIURL+'api/monitor/ping_data', data={'data':json.dumps(ping_data)},headers={"token":TOKEN}, timeout=5)
+    res = request_fun('/api/monitor/ping_data', {'data':json.dumps(ping_data)},'post')
     # print(res.text)
         
 @async
 def get_ping():
-    ping_hosts = requests.get(APIURL+'api/monitor/ping_hosts',headers={"token":TOKEN}, timeout=5).json()
+    ping_hosts = request_fun('/api/monitor/ping_hosts',{},'get').json()
     if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
         ping_ips = ping_hosts['data']
         for i in ping_ips:
@@ -1525,7 +1540,7 @@ def getOsInfo():
     array['ipv4'] = IPV4
     array['ipv6'] = IPV6
     try:
-        res = requests.post(APIURL+'api/monitor/set_system_info', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+        res = request_fun('/api/monitor/set_system_info', {'data':json.dumps(array)},'post')
         # print(res.text)
     except requests.exceptions.ConnectionError:
         print('连接到API错误 -- 请等待3秒')
@@ -1570,7 +1585,7 @@ def get_os_more_info():
                 array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
                 
                 try:
-                    res = requests.post(APIURL+'api/monitor/monitor_log', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+                    res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')
                     # print(res.text)
                     break
                 except requests.exceptions.ConnectionError:
@@ -1602,28 +1617,53 @@ def get_ip_info():
         # ip_info['country_code'] = ipip_res['location']['country_code']
         # ip_info['country_name'] = ipip_res['location']['country_name']
         # ip_info['country_name'] = ipip_res['location']['country_name']
-        res2 = requests.post(APIURL+'api/monitor/set_ip_info', data={'data':json.dumps(ip_info)},headers={"token":TOKEN}, timeout=5)
+        res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
         # print(res2.text)
     else:
         print('ip获取失败')
         time.sleep(3600)
         get_ip_info()
     
+def check_sys():
+    is_run= False
+    # IPV4, IPV6 = get_ip()
+    _ipv4, _ipv6 = get_ip()
+    
+    if _ipv4!='' or _ipv6!='':
+        IPV4 = _ipv4
+        IPV6 = _ipv6
+        try:
+            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"group_token":GROUPTOKEN,"ipv4":IPV4,"ipv6":IPV6},'get')
+            try:
+                res = res.json()
+                if res['code'] == 0:
+                    file= open('/usr/local/ServerStatusPlus/config/ServerToken.conf', mode='w+', encoding='UTF-8')
+                    file.write(res['data']['server_token'])
+                    file.close() # 关闭文件
+                    file= open('/usr/local/ServerStatusPlus/config/GroupToken.conf', mode='w+', encoding='UTF-8')
+                    file.write(res['data']['group_token'])
+                    file.close() # 关闭文件
+                    is_run = True
+                else:
+                    is_run = True
+                    
+                check_upgrade()
+                get_ip_info()
+                get_realtime_date()
+                getOsInfo()
+                get_ping()
+                get_os_more_info()
+            except ValueError:
+                print('在校验客户端时，服务端返回数据错误')
+                check_token()
+        except requests.exceptions.RequestException as e:
+            print('在校验客户端时，连接服务端超时')
+            check_token()
+    else:
+        print('获取客户端IP失败，3秒后重试')
+        time.sleep(3)
+        check_sys()
 
 if __name__ == '__main__':
-    for argc in sys.argv:
-        if 'token' in argc:
-            TOKEN = argc.split('token=')[-1]
-        elif 'INTERVAL' in argc:
-            INTERVAL = int(argc.split('INTERVAL=')[-1])
-    
-    if len(IPV4)==0 and len(IPV6)==0:
-        IPV4, IPV6 = get_ip()
-
-    check_upgrade()
-    get_ip_info()
-    get_realtime_date()
-    getOsInfo()
-    get_ping()
-    get_os_more_info()
+    check_sys()
     

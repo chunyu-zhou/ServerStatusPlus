@@ -53,7 +53,7 @@ if sys.platform.startswith("win32"):
 else:
     timer = time.time
 
-def request_fun(path,data,request_type):
+def request_fun(path='',data={},request_type='get'):
     request_type == request_type.lower()
     APIURL = "{}{}?server_token={}&group_token={}&user_token={}".format(APIDOMAIN,path,SERVERTOKEN,GROUPTOKEN,USERTOKEN)
     if request_type == 'get':
@@ -1554,7 +1554,7 @@ def getOsInfo():
         print('未知错误, 请等待3秒')
 
 @async
-def get_os_more_info():
+def monitor_main():
     while True:
         try:
             while True:
@@ -1605,24 +1605,47 @@ def get_os_more_info():
             print("捕获异常:", e)
             time.sleep(3)
 
-@async
+# @async
 def get_ip_info():
     # res = requests.get("https://ifconfig.me", timeout=5)
     # ip = res.text.strip()
     # ip_info = requests.get('https://api.ip.sb/geoip').json()
     
-    ip_info = requests.get('https://ipapi.co/json/').json()
-    if 'ip' in ip_info:
-        # ipip_res = requests.get('https://api.myip.la/en?json').json()
-        # ip_info['country_code'] = ipip_res['location']['country_code']
-        # ip_info['country_name'] = ipip_res['location']['country_name']
-        # ip_info['country_name'] = ipip_res['location']['country_name']
-        res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
-        # print(res2.text)
-    else:
-        print('ip获取失败')
-        time.sleep(3600)
+    try:
+        ip_info = requests.get('https://ipapi.co/json/')
+        try:
+            ip_info = ip_info.json()
+            print(ip_info)
+            print('ip' in ip_info)
+            if 'ip' in ip_info:
+                # ipip_res = requests.get('https://api.myip.la/en?json').json()
+                # ip_info['country_code'] = ipip_res['location']['country_code']
+                # ip_info['country_name'] = ipip_res['location']['country_name']
+                # ip_info['country_name'] = ipip_res['location']['country_name']
+                try:
+                    res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
+                    # print(res2.text)
+                except requests.exceptions.RequestException as e:
+                    print('在更新IP信息时，连接服务端超时')
+                    get_ip_info()
+                except requests.exceptions.ConnectionError:
+                    print('在更新IP信息时，连接失败')
+                    get_ip_info()
+            else:
+                print('ip获取失败')
+                time.sleep(3600)
+                get_ip_info()
+        except ValueError:
+            print('在获取IP信息时，服务端返回数据错误')
+            get_ip_info()
+    except requests.exceptions.RequestException as e:
+        print('在获取IP信息时，连接服务端超时')
         get_ip_info()
+    except requests.exceptions.ConnectionError:
+        print('在获取IP信息时，连接失败')
+        get_ip_info()
+                 
+    
     
 def check_sys():
     is_run= False
@@ -1652,7 +1675,7 @@ def check_sys():
                 get_realtime_date()
                 getOsInfo()
                 get_ping()
-                get_os_more_info()
+                monitor_main()
             except ValueError:
                 print('在校验客户端时，服务端返回数据错误')
                 check_token()

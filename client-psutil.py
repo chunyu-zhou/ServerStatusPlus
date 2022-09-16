@@ -1615,8 +1615,6 @@ def get_ip_info():
         ip_info = requests.get('https://ipapi.co/json/')
         try:
             ip_info = ip_info.json()
-            print(ip_info)
-            print('ip' in ip_info)
             if 'ip' in ip_info:
                 # ipip_res = requests.get('https://api.myip.la/en?json').json()
                 # ip_info['country_code'] = ipip_res['location']['country_code']
@@ -1624,7 +1622,6 @@ def get_ip_info():
                 # ip_info['country_name'] = ipip_res['location']['country_name']
                 try:
                     res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
-                    # print(res2.text)
                 except requests.exceptions.RequestException as e:
                     print('在更新IP信息时，连接服务端超时')
                     get_ip_info()

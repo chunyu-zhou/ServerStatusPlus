@@ -62,6 +62,7 @@ def request_fun(path='',data={},request_type='get'):
         res = requests.post(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
     return res
 
+# 参考文档 https://blog.csdn.net/qq_26373925/article/details/108047836
 class CpuConstants:
     def __init__(self):
         '''
@@ -1511,7 +1512,16 @@ def os_bits(machine=machine()):
     """Return bitness ofoperating system, or None if unknown."""
     machine2bits = {'AMD64':64, 'x86_64': 64, 'i386': 32, 'x86': 32}
     return machine2bits.get(machine, None)
-
+def get_virtualization_type():
+    if UNIX:
+        virtualization_type = ExecShellUnix('LANG="en_US.UTF-8" && systemd-detect-virt')[0].strip()
+        if virtualization_type=='' or virtualization_type=='none' or virtualization_type==None:
+            virtualization_type='物理机'
+    else:
+        # windows系统
+        virtualization_type = ''
+    return virtualization_type
+    
 @async
 def getOsInfo():
     SwapTotal, SwapUsed = get_swap()
@@ -1539,6 +1549,8 @@ def getOsInfo():
     array['disk_total'] = HDDTotal
     array['ipv4'] = IPV4
     array['ipv6'] = IPV6
+    array['virtualization_type'] = get_virtualization_type()
+    array['os_type'] = platform.system()
     try:
         res = request_fun('/api/monitor/set_system_info', {'data':json.dumps(array)},'post')
         # print(res.text)
@@ -1565,7 +1577,10 @@ def monitor_main():
                 MemoryTotal, MemoryUsed = get_memory()
                 SwapTotal, SwapUsed = get_swap()
                 HDDTotal, HDDUsed = get_hdd()
-                IP_STATUS = ip_status()
+                # IP_STATUS = ip_status()
+                SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
+                IO_INFO = GetIoReadWrite()  # 当前系统负载信息
+                NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}
                 array['uptime'] = Uptime
@@ -1581,12 +1596,28 @@ def monitor_main():
                 array['network_tx'] = netSpeed.get("nettx")
                 array['network_in'] = NET_IN
                 array['network_out'] = NET_OUT
-                array['ip_status'] = IP_STATUS
+                # array['ip_status'] = IP_STATUS
                 array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
+                
+                array['sys_load_one'] = SYSTEM_LOAD['one']
+                array['sys_load_five'] = SYSTEM_LOAD['five']
+                array['sys_load_fifteen'] = SYSTEM_LOAD['fifteen']
+                array['sys_load_max'] = SYSTEM_LOAD['max']
+                array['sys_load_limit'] = SYSTEM_LOAD['limit']
+                array['sys_load_safe'] = SYSTEM_LOAD['safe']
+                array['disk_info'] = GetDiskInfo()
+                array['io_info_write'] = IO_INFO['write']
+                array['io_info_read'] = IO_INFO['read']
+                array['up'] = NETWORK_INFO['up']
+                array['down'] = NETWORK_INFO['down']
+                array['upTotal'] = NETWORK_INFO['upTotal']
+                array['downTotal'] = NETWORK_INFO['downTotal']
+                array['downPackets'] = NETWORK_INFO['downPackets']
+                array['upPackets'] = NETWORK_INFO['upPackets']
                 
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')
-                    # print(res.text)
+                    print(res.text)
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')
@@ -1612,16 +1643,14 @@ def get_ip_info():
     # ip_info = requests.get('https://api.ip.sb/geoip').json()
     
     try:
-        ip_info = requests.get('https://ipapi.co/json/')
+        # ip_info = requests.get('https://ipapi.co/json/')
+        ip_info = requests.get('http://ip-api.com/json/?lang=zh-CN&fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query')
         try:
             ip_info = ip_info.json()
-            if 'ip' in ip_info:
-                # ipip_res = requests.get('https://api.myip.la/en?json').json()
-                # ip_info['country_code'] = ipip_res['location']['country_code']
-                # ip_info['country_name'] = ipip_res['location']['country_name']
-                # ip_info['country_name'] = ipip_res['location']['country_name']
+            if 'status' in ip_info and ip_info['status'] == 'success':
                 try:
                     res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
+                    print(res2.text)
                 except requests.exceptions.RequestException as e:
                     print('在更新IP信息时，连接服务端超时')
                     get_ip_info()
@@ -1669,7 +1698,7 @@ def check_sys():
                     
                 check_upgrade()
                 get_ip_info()
-                get_realtime_date()
+                get_realtime_date() # 获取当前网速
                 getOsInfo()
                 get_ping()
                 monitor_main()

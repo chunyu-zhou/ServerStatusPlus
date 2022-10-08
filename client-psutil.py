@@ -22,7 +22,8 @@ APIDOMAIN=open("/usr/local/ServerStatusPlus/config/host.conf", "r").read().strip
 if not APIDOMAIN.startswith('http://') and not APIDOMAIN.startswith('https://'):
     print('API地址错误，请检查！')
     exit()
-    
+
+VERSION = '1.0.0'
 INTERVAL = 1
 PORBEPORT = 80
 USERTOKEN = open("/usr/local/ServerStatusPlus/config/UserToken.conf", "r").read().strip()
@@ -1458,7 +1459,7 @@ def check_upgrade():
     BASH_VERSION = open("/usr/local/ServerStatusPlus/config/version", "r").read().strip()
     if version != BASH_VERSION:
         print('需要更新，最新版本：{} 当前版本：{}'.format(version,BASH_VERSION))
-        cmd='wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py" && /etc/init.d/status restart && /etc/init.d/status status'
+        cmd='/etc/init.d/status stop && wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py" && /etc/init.d/status start && /etc/init.d/status status'
         os.system(cmd)
     else:
         print('不需要更新，当前版本：{}'.format(BASH_VERSION))

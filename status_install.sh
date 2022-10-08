@@ -79,7 +79,6 @@ Read_config_client(){
 	rm -rf "/usr/local/ServerStatusPlus/*"
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
-	echo "$UserToken" > "/usr/local/ServerStatusPlus/config/UserToken.conf"
 	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
 	echo "$GroupToken" > "/usr/local/ServerStatusPlus/config/GroupToken.conf"
 	echo "$host" > "/usr/local/ServerStatusPlus/config/host.conf"
@@ -158,7 +157,7 @@ while getopts ":u:s:g:h:" opt
 do
     case $opt in
         u)
-        echo "UserToken: $OPTARG"
+        echo "参数uk的值$OPTARG"
         UserToken=$OPTARG
         ;;
         s)
@@ -174,14 +173,11 @@ do
         host=$OPTARG
         ;;
         ?)
-        echo "参数错误"
+        echo "未知参数: -$OPTARG index:$OPTIND"
         exit 1;;
     esac
 done
 
-if [ ${#UserToken} != 32 ] ; then
-	echo -e "${Error} UserToken错误，请检查 !" && exit 1
-fi
 if [ ${#ServerToken} != 32 ] ; then
 	echo -e "${Error} ServerToken错误，请检查 !" && exit 1
 fi

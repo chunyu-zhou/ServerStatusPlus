@@ -18,10 +18,16 @@ import hashlib
 import re
 from cachelib import SimpleCache
 
-APIURL="http://cloud.onetools.cn/"
+APIDOMAIN=open("/usr/local/ServerStatusPlus/config/host.conf", "r").read().strip()
+if not APIDOMAIN.startswith('http://') and not APIDOMAIN.startswith('https://'):
+    print('API地址错误，请检查！')
+    exit()
+    
 INTERVAL = 1
 PORBEPORT = 80
-TOKEN = open("/usr/local/ServerStatusPlus/config/token.conf", "r").read().strip()
+USERTOKEN = open("/usr/local/ServerStatusPlus/config/UserToken.conf", "r").read().strip()
+SERVERTOKEN = open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
+GROUPTOKEN = open("/usr/local/ServerStatusPlus/config/GroupToken.conf", "r").read().strip()
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
@@ -47,6 +53,16 @@ if sys.platform.startswith("win32"):
 else:
     timer = time.time
 
+def request_fun(path='',data={},request_type='get'):
+    request_type == request_type.lower()
+    APIURL = "{}{}?server_token={}&group_token={}&user_token={}".format(APIDOMAIN,path,SERVERTOKEN,GROUPTOKEN,USERTOKEN)
+    if request_type == 'get':
+        res = requests.get(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+    elif request_type == 'post':
+        res = requests.post(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+    return res
+
+# 参考文档 https://blog.csdn.net/qq_26373925/article/details/108047836
 class CpuConstants:
     def __init__(self):
         '''
@@ -1438,7 +1454,7 @@ def async(f):
 @async
 def check_upgrade():
     print('检测更新...')
-    version = requests.get(APIURL+'api/config/version', timeout=5).text.strip()
+    version = request_fun('/api/config/version', {},'get').text.strip()
     BASH_VERSION = open("/usr/local/ServerStatusPlus/config/version", "r").read().strip()
     if version != BASH_VERSION:
         print('需要更新，最新版本：{} 当前版本：{}'.format(version,BASH_VERSION))
@@ -1466,14 +1482,14 @@ def check_alive(ip):
     ping_data['from_ip_v4'] = IPV4
     ping_data['from_ip_v6'] = IPV6
     
-    print(json.dumps(ping_data))
+    # print(json.dumps(ping_data))
     # ping_data['ping_data'] = json.loads(ping_result)
-    res = requests.post(APIURL+'api/monitor/ping_data', data={'data':json.dumps(ping_data)},headers={"token":TOKEN}, timeout=5)
+    res = request_fun('/api/monitor/ping_data', {'data':json.dumps(ping_data)},'post')
     # print(res.text)
         
 @async
 def get_ping():
-    ping_hosts = requests.get(APIURL+'api/monitor/ping_hosts',headers={"token":TOKEN}, timeout=5).json()
+    ping_hosts = request_fun('/api/monitor/ping_hosts',{},'get').json()
     if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
         ping_ips = ping_hosts['data']
         for i in ping_ips:
@@ -1496,7 +1512,16 @@ def os_bits(machine=machine()):
     """Return bitness ofoperating system, or None if unknown."""
     machine2bits = {'AMD64':64, 'x86_64': 64, 'i386': 32, 'x86': 32}
     return machine2bits.get(machine, None)
-
+def get_virtualization_type():
+    if UNIX:
+        virtualization_type = ExecShellUnix('LANG="en_US.UTF-8" && systemd-detect-virt')[0].strip()
+        if virtualization_type=='' or virtualization_type=='none' or virtualization_type==None:
+            virtualization_type='物理机'
+    else:
+        # windows系统
+        virtualization_type = ''
+    return virtualization_type
+    
 @async
 def getOsInfo():
     SwapTotal, SwapUsed = get_swap()
@@ -1524,8 +1549,10 @@ def getOsInfo():
     array['disk_total'] = HDDTotal
     array['ipv4'] = IPV4
     array['ipv6'] = IPV6
+    array['virtualization_type'] = get_virtualization_type()
+    array['os_type'] = platform.system()
     try:
-        res = requests.post(APIURL+'api/monitor/set_system_info', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
+        res = request_fun('/api/monitor/set_system_info', {'data':json.dumps(array)},'post')
         # print(res.text)
     except requests.exceptions.ConnectionError:
         print('连接到API错误 -- 请等待3秒')
@@ -1539,7 +1566,7 @@ def getOsInfo():
         print('未知错误, 请等待3秒')
 
 @async
-def get_os_more_info():
+def monitor_main():
     while True:
         try:
             while True:
@@ -1550,7 +1577,10 @@ def get_os_more_info():
                 MemoryTotal, MemoryUsed = get_memory()
                 SwapTotal, SwapUsed = get_swap()
                 HDDTotal, HDDUsed = get_hdd()
-                IP_STATUS = ip_status()
+                # IP_STATUS = ip_status()
+                SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
+                IO_INFO = GetIoReadWrite()  # 当前系统负载信息
+                NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}
                 array['uptime'] = Uptime
@@ -1566,12 +1596,28 @@ def get_os_more_info():
                 array['network_tx'] = netSpeed.get("nettx")
                 array['network_in'] = NET_IN
                 array['network_out'] = NET_OUT
-                array['ip_status'] = IP_STATUS
+                # array['ip_status'] = IP_STATUS
                 array['tcp'], array['udp'], array['process'], array['thread'] = tupd()
                 
+                array['sys_load_one'] = SYSTEM_LOAD['one']
+                array['sys_load_five'] = SYSTEM_LOAD['five']
+                array['sys_load_fifteen'] = SYSTEM_LOAD['fifteen']
+                array['sys_load_max'] = SYSTEM_LOAD['max']
+                array['sys_load_limit'] = SYSTEM_LOAD['limit']
+                array['sys_load_safe'] = SYSTEM_LOAD['safe']
+                array['disk_info'] = GetDiskInfo()
+                array['io_info_write'] = IO_INFO['write']
+                array['io_info_read'] = IO_INFO['read']
+                array['up'] = NETWORK_INFO['up']
+                array['down'] = NETWORK_INFO['down']
+                array['upTotal'] = NETWORK_INFO['upTotal']
+                array['downTotal'] = NETWORK_INFO['downTotal']
+                array['downPackets'] = NETWORK_INFO['downPackets']
+                array['upPackets'] = NETWORK_INFO['upPackets']
+                
                 try:
-                    res = requests.post(APIURL+'api/monitor/monitor_log', data={'data':json.dumps(array)},headers={"token":TOKEN}, timeout=5)
-                    # print(res.text)
+                    res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')
+                    print(res.text)
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')
@@ -1590,40 +1636,83 @@ def get_os_more_info():
             print("捕获异常:", e)
             time.sleep(3)
 
-@async
+# @async
 def get_ip_info():
     # res = requests.get("https://ifconfig.me", timeout=5)
     # ip = res.text.strip()
     # ip_info = requests.get('https://api.ip.sb/geoip').json()
     
-    ip_info = requests.get('https://ipapi.co/json/').json()
-    if 'ip' in ip_info:
-        # ipip_res = requests.get('https://api.myip.la/en?json').json()
-        # ip_info['country_code'] = ipip_res['location']['country_code']
-        # ip_info['country_name'] = ipip_res['location']['country_name']
-        # ip_info['country_name'] = ipip_res['location']['country_name']
-        res2 = requests.post(APIURL+'api/monitor/set_ip_info', data={'data':json.dumps(ip_info)},headers={"token":TOKEN}, timeout=5)
-        # print(res2.text)
-    else:
-        print('ip获取失败')
-        time.sleep(3600)
+    try:
+        # ip_info = requests.get('https://ipapi.co/json/')
+        ip_info = requests.get('http://ip-api.com/json/?lang=zh-CN&fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query')
+        try:
+            ip_info = ip_info.json()
+            if 'status' in ip_info and ip_info['status'] == 'success':
+                try:
+                    res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')
+                    print(res2.text)
+                except requests.exceptions.RequestException as e:
+                    print('在更新IP信息时，连接服务端超时')
+                    get_ip_info()
+                except requests.exceptions.ConnectionError:
+                    print('在更新IP信息时，连接失败')
+                    get_ip_info()
+            else:
+                print('ip获取失败')
+                time.sleep(3600)
+                get_ip_info()
+        except ValueError:
+            print('在获取IP信息时，服务端返回数据错误')
+            get_ip_info()
+    except requests.exceptions.RequestException as e:
+        print('在获取IP信息时，连接服务端超时')
         get_ip_info()
+    except requests.exceptions.ConnectionError:
+        print('在获取IP信息时，连接失败')
+        get_ip_info()
+                 
     
+    
+def check_sys():
+    is_run= False
+    # IPV4, IPV6 = get_ip()
+    _ipv4, _ipv6 = get_ip()
+    
+    if _ipv4!='' or _ipv6!='':
+        IPV4 = _ipv4
+        IPV6 = _ipv6
+        try:
+            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"group_token":GROUPTOKEN,"ipv4":IPV4,"ipv6":IPV6},'get')
+            try:
+                res = res.json()
+                if res['code'] == 0:
+                    file= open('/usr/local/ServerStatusPlus/config/ServerToken.conf', mode='w+', encoding='UTF-8')
+                    file.write(res['data']['server_token'])
+                    file.close() # 关闭文件
+                    file= open('/usr/local/ServerStatusPlus/config/GroupToken.conf', mode='w+', encoding='UTF-8')
+                    file.write(res['data']['group_token'])
+                    file.close() # 关闭文件
+                    is_run = True
+                else:
+                    is_run = True
+                    
+                check_upgrade()
+                get_ip_info()
+                get_realtime_date() # 获取当前网速
+                getOsInfo()
+                get_ping()
+                monitor_main()
+            except ValueError:
+                print('在校验客户端时，服务端返回数据错误')
+                check_token()
+        except requests.exceptions.RequestException as e:
+            print('在校验客户端时，连接服务端超时')
+            check_token()
+    else:
+        print('获取客户端IP失败，3秒后重试')
+        time.sleep(3)
+        check_sys()
 
 if __name__ == '__main__':
-    for argc in sys.argv:
-        if 'token' in argc:
-            TOKEN = argc.split('token=')[-1]
-        elif 'INTERVAL' in argc:
-            INTERVAL = int(argc.split('INTERVAL=')[-1])
-    
-    if len(IPV4)==0 and len(IPV6)==0:
-        IPV4, IPV6 = get_ip()
-
-    check_upgrade()
-    get_ip_info()
-    get_realtime_date()
-    getOsInfo()
-    get_ping()
-    get_os_more_info()
+    check_sys()
     

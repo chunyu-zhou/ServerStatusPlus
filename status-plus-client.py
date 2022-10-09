@@ -25,9 +25,7 @@ APIDOMAIN="http://cloud.onetools.cn"
 VERSION = '1.0.0'
 INTERVAL = 1
 PORBEPORT = 80
-USERTOKEN = open("/usr/local/ServerStatusPlus/config/UserToken.conf", "r").read().strip()
 SERVERTOKEN = open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
-GROUPTOKEN = open("/usr/local/ServerStatusPlus/config/GroupToken.conf", "r").read().strip()
 CU = "www.chinaunicom.com"
 CT = "www.189.cn"
 CM = "www.10086.cn"
@@ -1680,15 +1678,12 @@ def check_sys():
         IPV4 = _ipv4
         IPV6 = _ipv6
         try:
-            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"group_token":GROUPTOKEN,"ipv4":IPV4,"ipv6":IPV6},'get')
+            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"ipv4":IPV4,"ipv6":IPV6},'get')
             try:
                 res = res.json()
                 if res['code'] == 0:
                     file= open('/usr/local/ServerStatusPlus/config/ServerToken.conf', mode='w+', encoding='UTF-8')
                     file.write(res['data']['server_token'])
-                    file.close() # 关闭文件
-                    file= open('/usr/local/ServerStatusPlus/config/GroupToken.conf', mode='w+', encoding='UTF-8')
-                    file.write(res['data']['group_token'])
                     file.close() # 关闭文件
                     is_run = True
                 else:

@@ -1618,7 +1618,7 @@ async def monitor_main():
                 
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')
-                    print(res.text)
+                    # print(res.text)
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')

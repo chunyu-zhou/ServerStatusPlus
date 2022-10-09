@@ -43,7 +43,6 @@ Installation_dependency(){
 	fi
 	pip3 install requests
 	pip3 install psutil
-	pip3 install distro
 	pip3 install wmi
 	pip3 install cachelib
 }
@@ -81,22 +80,24 @@ Read_config_client(){
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
+	echo "$GroupToken" > "/usr/local/ServerStatusPlus/config/GroupToken.conf"
+	echo "$host" > "/usr/local/ServerStatusPlus/config/host.conf"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "http://cloud.onetools.cn/static/ServerStatusPlus/status-plus-client.py"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi
 }
 Service_Server_Status_client(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget -N --no-check-certificate "http://cloud.onetools.cn/static/ServerStatusPlus/service/client_centos" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_centos" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status
 		chkconfig --add status
 		chkconfig status on
 	else
-		if ! wget -N --no-check-certificate "http://cloud.onetools.cn/static/ServerStatusPlus/service/client_debian" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/service/client_debian" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status
@@ -122,15 +123,66 @@ Restart_ServerStatus_client(){
 	[[ ! -z ${PID} ]] && /etc/init.d/status stop
 	/etc/init.d/status start
 }
+Uninstall_ServerStatus_client(){
+	echo "确定要卸载 ServerStatusPlus 客户端(如果同时安装了服务端，则只会删除客户端) ? [y/N]"
+	echo
+	read -e -p "(默认: n):" unyn
+	[[ -z ${unyn} ]] && unyn="n"
+	if [[ ${unyn} == [Yy] ]]; then
+		check_pid_client
+		[[ ! -z $PID ]] && kill -9 ${PID}
+		rm -rf "/usr/local/ServerStatusPlus"
+		rm -rf /etc/init.d/status
+		if [[ ${release} = "centos" ]]; then
+			chkconfig --del status
+		else
+			update-rc.d -f status remove
+		fi
+		echo && echo "ServerStatusPlus 卸载完成 !" && echo
+	else
+		echo && echo "卸载已取消..." && echo
+	fi
+}
 
 View_client_Log(){
 	[[ ! -e ${client_log_file} ]] && echo -e "${Error} 没有找到日志文件 !" && exit 1
 	echo && echo -e "${Tip} 按 ${Red_font_prefix}Ctrl+C${Font_color_suffix} 终止查看日志" && echo -e "如果需要查看完整日志内容，请用 ${Red_font_prefix}cat ${client_log_file}${Font_color_suffix} 命令。" && echo
 	tail -f ${client_log_file}
 }
-ServerToken=$1
+# action=$1
+# if [ ${#action} != 32 ] ; then
+# 	echo -e "${Error} Token错误，请检查 !" && exit 1
+# fi
+while getopts ":u:s:g:h:" opt
+do
+    case $opt in
+        u)
+        echo "参数uk的值$OPTARG"
+        UserToken=$OPTARG
+        ;;
+        s)
+        echo "参数sk的值$OPTARG"
+        ServerToken=$OPTARG
+        ;;
+        g)
+        echo "参数gk的值$OPTARG"
+        GroupToken=$OPTARG
+        ;;
+        h)
+        echo "参数host的值$OPTARG"
+        host=$OPTARG
+        ;;
+        ?)
+        echo "未知参数: -$OPTARG index:$OPTIND"
+        exit 1;;
+    esac
+done
+
 if [ ${#ServerToken} != 32 ] ; then
-	echo -e "${Error} Token错误，请检查 !" && exit 1
+	echo -e "${Error} ServerToken错误，请检查 !" && exit 1
+fi
+if [ ${#GroupToken} != 32 ] ; then
+	echo -e "${Error} GroupToken错误，请检查 !" && exit 1
 fi
 
 check_sys

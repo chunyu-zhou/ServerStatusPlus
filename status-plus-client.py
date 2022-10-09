@@ -17,6 +17,8 @@ from typing import List, Dict, Any
 import hashlib
 import re
 from cachelib import SimpleCache
+import asyncio
+import distro
 
 APIDOMAIN=open("/usr/local/ServerStatusPlus/config/host.conf", "r").read().strip()
 if not APIDOMAIN.startswith('http://') and not APIDOMAIN.startswith('https://'):
@@ -1446,13 +1448,6 @@ def get_ip():
             ip6 = ''
     return ip4, ip6
 
-def async(f):
-    def wrapper(*args, **kwargs):
-        thr = threading.Thread(target=f, args=args, kwargs=kwargs)
-        thr.start()
-    return wrapper
-    
-@async
 def check_upgrade():
     print('检测更新...')
     version = request_fun('/api/config/version', {},'get').text.strip()
@@ -1488,8 +1483,8 @@ def check_alive(ip):
     res = request_fun('/api/monitor/ping_data', {'data':json.dumps(ping_data)},'post')
     # print(res.text)
         
-@async
-def get_ping():
+
+async def get_ping():
     ping_hosts = request_fun('/api/monitor/ping_hosts',{},'get').json()
     if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
         ping_ips = ping_hosts['data']
@@ -1498,8 +1493,8 @@ def get_ping():
             p.setDaemon(True)
             p.start()
             
-    time.sleep(PINGTIME)
-    get_ping()
+    await asyncio.sleep(PINGTIME)
+    await get_ping()
 
 def machine():
     """Return type ofmachine."""
@@ -1523,11 +1518,17 @@ def get_virtualization_type():
         virtualization_type = ''
     return virtualization_type
     
-@async
-def getOsInfo():
+
+async def getOsInfo():
     SwapTotal, SwapUsed = get_swap()
     HDDTotal, HDDUsed = get_hdd()
-    os_dist = platform.dist()
+    # try:
+    #     os_dist = platform.dist()
+    # except:
+    #     os_dist = distro.linux_distribution(full_distribution_name=False)
+    # if UNIX:
+    #     os_dist = distro.linux_distribution(full_distribution_name=False)
+    # os_dist = distro.linux_distribution(full_distribution_name=False)
     CpuConstants = GetCpuConstants()
     MemInfo = GetMemInfo()
     # IPV4, IPV6 = get_ip()
@@ -1537,8 +1538,9 @@ def getOsInfo():
     array['cpu_count'] = psutil.cpu_count() # CPU逻辑数量
     array['cpu_core'] = psutil.cpu_count(logical=False) # CPU核心
     array['cpu_threads'] = psutil.cpu_count() # CPU线程
-    array['os'] = os_dist[0]
-    array['os_version'] = os_dist[1]
+    array['os'] = distro.id()
+    array['os_version'] = distro.version()
+    array['os_name'] = distro.name()
     array['os_bit_versions'] = os_bits()
     array['os_bit'] = platform.architecture()[0]
     array['release_version'] = GetSystemVersionCore()
@@ -1566,8 +1568,8 @@ def getOsInfo():
     except:
         print('未知错误, 请等待3秒')
 
-@async
-def monitor_main():
+
+async def monitor_main():
     while True:
         try:
             while True:
@@ -1622,22 +1624,21 @@ def monitor_main():
                     break
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')
-                    time.sleep(3)
+                    await asyncio.sleep(3)
                 except requests.exceptions.ChunkedEncodingError:
                     print('分块编码错误 -- 请等待3秒')
-                    time.sleep(3)  
+                    await asyncio.sleep(3)  
                 except KeyboardInterrupt:
                     raise  
                 except:
                     print('未知错误, 请等待3秒')
-                    time.sleep(3)
+                    await asyncio.sleep(3)
         except KeyboardInterrupt:
             raise
         except Exception as e:
             print("捕获异常:", e)
-            time.sleep(3)
+            await asyncio.sleep(3)
 
-# @async
 def get_ip_info():
     # res = requests.get("https://ifconfig.me", timeout=5)
     # ip = res.text.strip()
@@ -1672,8 +1673,7 @@ def get_ip_info():
         print('在获取IP信息时，连接失败')
         get_ip_info()
                  
-    
-    
+
 def check_sys():
     is_run= False
     # IPV4, IPV6 = get_ip()
@@ -1697,12 +1697,9 @@ def check_sys():
                 else:
                     is_run = True
                     
-                check_upgrade()
+                # check_upgrade()
                 get_ip_info()
                 get_realtime_date() # 获取当前网速
-                getOsInfo()
-                get_ping()
-                monitor_main()
             except ValueError:
                 print('在校验客户端时，服务端返回数据错误')
                 check_token()
@@ -1716,4 +1713,8 @@ def check_sys():
 
 if __name__ == '__main__':
     check_sys()
+
+    async def main():
+        await asyncio.gather(getOsInfo(), get_ping(), monitor_main())
+    asyncio.run(main())
     

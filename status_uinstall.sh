@@ -25,4 +25,4 @@ Uninstall_ServerStatus_client(){
 }
 
 
-Install_ServerStatus_client
+Uninstall_ServerStatus_client

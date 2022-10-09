@@ -20,10 +20,7 @@ from cachelib import SimpleCache
 import asyncio
 import distro
 
-APIDOMAIN=open("/usr/local/ServerStatusPlus/config/host.conf", "r").read().strip()
-if not APIDOMAIN.startswith('http://') and not APIDOMAIN.startswith('https://'):
-    print('API地址错误，请检查！')
-    exit()
+APIDOMAIN="http://cloud.onetools.cn"
 
 VERSION = '1.0.0'
 INTERVAL = 1
@@ -60,9 +57,9 @@ def request_fun(path='',data={},request_type='get'):
     request_type == request_type.lower()
     APIURL = "{}{}?server_token={}&group_token={}&user_token={}".format(APIDOMAIN,path,SERVERTOKEN,GROUPTOKEN,USERTOKEN)
     if request_type == 'get':
-        res = requests.get(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+        res = requests.get(APIURL, data=data,headers={"server_token":SERVERTOKEN,"client_version":VERSION}, timeout=30, verify=False)
     elif request_type == 'post':
-        res = requests.post(APIURL, data=data,headers={"server_token":SERVERTOKEN,"group_token":GROUPTOKEN,"user_token":USERTOKEN}, timeout=30, verify=False)
+        res = requests.post(APIURL, data=data,headers={"server_token":SERVERTOKEN,"client_version":VERSION}, timeout=30, verify=False)
     return res
 
 # 参考文档 https://blog.csdn.net/qq_26373925/article/details/108047836

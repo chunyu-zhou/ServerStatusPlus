@@ -80,21 +80,21 @@ Read_config_client(){
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "http://cloud.onetools.cn/static/ServerStatusPlus/status-plus-client.py"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/status-plus-client.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi
 }
 Service_Server_Status_client(){
 	if [[ ${release} = "centos" ]]; then
-		if ! wget -N --no-check-certificate "http://cloud.onetools.cn/static/ServerStatusPlus/service/client_centos" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/service/client_centos" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status
 		chkconfig --add status
 		chkconfig status on
 	else
-		if ! wget -N --no-check-certificate "http://cloud.onetools.cn/static/ServerStatusPlus/service/client_debian" -O /etc/init.d/status; then
+		if ! wget -N --no-check-certificate "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/service/client_debian" -O /etc/init.d/status; then
 			echo -e "${Error} ServerStatusPlus 客户端服务管理脚本下载失败 !" && exit 1
 		fi
 		chmod +x /etc/init.d/status

@@ -25,15 +25,15 @@ APIDOMAIN="http://cloud.onetools.cn"
 VERSION = '1.0.0'
 INTERVAL = 1
 PORBEPORT = 80
-SERVERTOKEN = open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
-CU = "www.chinaunicom.com"
-CT = "www.189.cn"
-CM = "www.10086.cn"
-GETIPTIME = 10
-PINGTIME = 10
-UPGRDETIME = 600
-IPV4 = ''
-IPV6 = ''
+SERVERTOKEN=open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
+CU="www.chinaunicom.com"
+CT="www.189.cn"
+CM="www.10086.cn"
+GETIPTIME=10
+PINGTIME=10
+UPGRDETIME=600
+IPV4=''
+IPV6=''
 PING_PACKET_HISTORY_LEN = 100
 PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
 SUCCESS = 0
@@ -1427,34 +1427,37 @@ def get_realtime_date():
     t4.start()
 
 def get_ip():
+    global IPV4
+    global IPV6
     try:
-        ip4 = requests.get("https://api.myip.la", timeout=5).text.strip()
+        ip4=requests.get("https://api.myip.la", timeout=5).text.strip()
     except:
         try:
-            ip4 = requests.get("https://ifconfig.me", timeout=5, verify=False).text.strip()
+            ip4=requests.get("https://ifconfig.me", timeout=5, verify=False).text.strip()
         except:
             ip4 = ''
     try:
-        ip6 = requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
+        ip6=requests.get("http://api-ipv6.ip.sb/ip", timeout=5).text.strip()
     except:
         try:
             ip6 = requests.get("https://ipv6.ping0.cc", timeout=5, verify=False).text.strip()
         except:
             ip6 = ''
+    IPV4=ip4
+    IPV6=ip6
     return ip4, ip6
 
 def check_upgrade():
     print('检测更新...')
     version = request_fun('/api/config/version', {},'get').text.strip()
-    BASH_VERSION = open("/usr/local/ServerStatusPlus/config/version", "r").read().strip()
-    if version != BASH_VERSION:
-        print('需要更新，最新版本：{} 当前版本：{}'.format(version,BASH_VERSION))
-        cmd='/etc/init.d/status stop && wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://cdn.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/client-psutil.py" && /etc/init.d/status start && /etc/init.d/status status'
+    if version != VERSION:
+        print('需要更新，最新版本：{} 当前版本：{}'.format(version,VERSION))
+        cmd='/etc/init.d/status stop && wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/status-plus-client.py" && /etc/init.d/status start && /etc/init.d/status status'
         os.system(cmd)
     else:
-        print('不需要更新，当前版本：{}'.format(BASH_VERSION))
-    time.sleep(UPGRDETIME)
-    check_upgrade()
+        print('不需要更新，当前版本：{}'.format(VERSION))
+    # time.sleep(UPGRDETIME)
+    # check_upgrade()
 
 def check_alive(ip):
     ping_result = None
@@ -1554,10 +1557,10 @@ async def getOsInfo():
         # print(res.text)
     except requests.exceptions.ConnectionError:
         print('连接到API错误 -- 请等待3秒')
-        time.sleep(3)
+        await asyncio.sleep(3)
     except requests.exceptions.ChunkedEncodingError:
         print('分块编码错误 -- 请等待3秒')
-        time.sleep(3)  
+        await asyncio.sleep(3)  
     except KeyboardInterrupt:
         raise  
     except:
@@ -1671,14 +1674,16 @@ def get_ip_info():
 
 def check_sys():
     is_run= False
-    # IPV4, IPV6 = get_ip()
     _ipv4, _ipv6 = get_ip()
     
-    if _ipv4!='' or _ipv6!='':
+    if _ipv4!='' and _ipv6!='':
+        print('IP获取失败，停止执行')
+        exit()
+    elif _ipv4!='' or _ipv6!='':
         IPV4 = _ipv4
         IPV6 = _ipv6
         try:
-            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"ipv4":IPV4,"ipv6":IPV6},'get')
+            res = request_fun('/api/monitor/get_new_token', {'server_token':SERVERTOKEN,"ipv4":IPV4,"ipv6":IPV6},'post')
             try:
                 res = res.json()
                 if res['code'] == 0:
@@ -1689,15 +1694,14 @@ def check_sys():
                 else:
                     is_run = True
                     
-                # check_upgrade()
                 get_ip_info()
                 get_realtime_date() # 获取当前网速
             except ValueError:
                 print('在校验客户端时，服务端返回数据错误')
-                check_token()
+                check_sys()
         except requests.exceptions.RequestException as e:
             print('在校验客户端时，连接服务端超时')
-            check_token()
+            check_sys()
     else:
         print('获取客户端IP失败，3秒后重试')
         time.sleep(3)
@@ -1705,7 +1709,7 @@ def check_sys():
 
 if __name__ == '__main__':
     check_sys()
-
+    
     async def main():
         await asyncio.gather(getOsInfo(), get_ping(), monitor_main())
     # asyncio.run(main())

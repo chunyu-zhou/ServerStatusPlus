@@ -79,7 +79,6 @@ Read_config_client(){
 	mkdir -p "/usr/local/ServerStatusPlus/config"
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
-	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/config/version" "http://cloud.onetools.cn/api/version"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/status-plus-client.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1

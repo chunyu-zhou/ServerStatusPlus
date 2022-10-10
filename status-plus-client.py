@@ -1681,7 +1681,7 @@ def check_sys():
     is_run= False
     _ipv4, _ipv6 = get_ip()
     
-    if _ipv4!='' and _ipv6!='':
+    if _ipv4=='' and _ipv6=='':
         print('IP获取失败，停止执行')
         exit()
     elif _ipv4!='' or _ipv6!='':

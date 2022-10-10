@@ -1452,7 +1452,7 @@ def check_upgrade():
     version = request_fun('/api/config/version', {},'get').text.strip()
     if version != VERSION:
         print('需要更新，最新版本：{} 当前版本：{}'.format(version,VERSION))
-        cmd='/etc/init.d/status stop && wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://github.com/chunyu-zhou/ServerStatusPlus/raw/master/status-plus-client.py" && /etc/init.d/status start && /etc/init.d/status status'
+        cmd='/etc/init.d/status stop && wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://gcore.jsdelivr.net/gh/chunyu-zhou/ServerStatusPlus/status-plus-client.py" && /etc/init.d/status start && /etc/init.d/status status'
         os.system(cmd)
     else:
         print('不需要更新，当前版本：{}'.format(VERSION))

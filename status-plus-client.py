@@ -1638,15 +1638,20 @@ async def monitor_main():
             await asyncio.sleep(3)
 
 def get_ip_info():
-    # res = requests.get("https://ifconfig.me", timeout=5)
-    # ip = res.text.strip()
-    # ip_info = requests.get('https://api.ip.sb/geoip').json()
+    ipip_info = requests.get('https://api.myip.la/cn?json').json()
+    ipip_info = ipip_info['location']
     
     try:
         # ip_info = requests.get('https://ipapi.co/json/')
         ip_info = requests.get('http://ip-api.com/json/?lang=zh-CN&fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query')
         try:
             ip_info = ip_info.json()
+            ip_info['country'] = ipip_info['country_name']
+            ip_info['regionName'] = ipip_info['province']
+            ip_info['city'] = ipip_info['city']
+            ip_info['lat'] = ipip_info['latitude']
+            ip_info['lon'] = ipip_info['longitude']
+            ip_info['country_code'] = ipip_info['country_code']
             if 'status' in ip_info and ip_info['status'] == 'success':
                 try:
                     res2 = request_fun('/api/monitor/set_ip_info', {'data':json.dumps(ip_info)},'post')

@@ -35,9 +35,9 @@ Installation_dependency(){
 		yum -y install wget
 	else
 		apt-get update
-		apt-get install -y python3
-		apt-get install-y python3-pip
-		apt-get install-y wget
+		apt-get -y install python3
+		apt-get -y install python3-pip
+		apt-get -y install wget
 	fi
 	pip3 install requests
 	pip3 install psutil

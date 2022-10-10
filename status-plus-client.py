@@ -1430,10 +1430,10 @@ def get_ip():
     global IPV4
     global IPV6
     try:
-        ip4=requests.get("https://api.myip.la", timeout=5).text.strip()
+        ip4=requests.get("https://ifconfig.me", timeout=5).text.strip()
     except:
         try:
-            ip4=requests.get("https://ifconfig.me", timeout=5, verify=False).text.strip()
+            ip4=requests.get("https://api.myip.la", timeout=5, verify=False).text.strip()
         except:
             ip4 = ''
     try:

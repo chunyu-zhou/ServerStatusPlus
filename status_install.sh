@@ -80,6 +80,7 @@ Read_config_client(){
 	mkdir -p "/usr/local/ServerStatusPlus/log"
 	echo "$ServerToken" > "/usr/local/ServerStatusPlus/config/ServerToken.conf"
 	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-plus-client.py" "https://gitee.com/zcyso/ServerStatusPlus/raw/master/status-plus-client.py"
+	wget -N --no-check-certificate -O "/usr/local/ServerStatusPlus/status-ping.py" "https://gitee.com/zcyso/ServerStatusPlus/raw/master/status-ping.py"
 	if [[ ! -e "/usr/local/ServerStatusPlus/status-plus-client.py" ]]; then
 		echo -e "${Error} ServerStatus 客户端文件不存在 !" && exit 1
 	fi

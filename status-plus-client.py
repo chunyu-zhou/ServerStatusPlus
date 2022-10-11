@@ -1312,6 +1312,7 @@ def check_sys():
         check_sys()
 
 if __name__ == '__main__':
+    os.system('python3 /usr/local/ServerStatusPlus/status-ping.py')
     check_sys()
     getOsInfo()
     monitor_main()

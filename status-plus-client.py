@@ -20,7 +20,7 @@ import distro
 from typing import List, Dict, Any
 from cachelib import SimpleCache
 
-APIDOMAIN="http://cloud.onetools.cn"
+APIDOMAIN="http://monitor.onecdn.cn"
 
 VERSION = '1.0.0'
 INTERVAL = 1

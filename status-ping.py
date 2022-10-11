@@ -12,7 +12,7 @@ import select
 import platform
 from typing import List, Dict, Any
 
-APIDOMAIN="http://cloud.onetools.cn"
+APIDOMAIN="http://monitor.onecdn.cn"
 
 VERSION = '1.0.0'
 INTERVAL = 1

@@ -458,13 +458,18 @@ def check_alive(ip):
         
 
 def get_ping():
-    ping_hosts = request_fun('/api/monitor/ping_hosts',{},'get').json()
-    if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
-        ping_ips = ping_hosts['data']
-        for ip in ping_ips:
-            p = threading.Thread(target=check_alive, args=(ip,))
-            p.setDaemon(True)
-            p.start()
+    ping_hosts = request_fun('/api/monitor/ping_hosts',{},'get')
+    try:
+        ping_hosts = ping_hosts.json()
+        if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
+            ping_ips = ping_hosts['data']
+            for ip in ping_ips:
+                p = threading.Thread(target=check_alive, args=(ip,))
+                p.setDaemon(True)
+                p.start()
+            
+    except ValueError:
+        print('在获取Ping数据时，服务端返回数据错误')
     time.sleep(PINGTIME)
     get_ping()
 

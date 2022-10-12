@@ -9,24 +9,17 @@ import threading
 import requests
 import struct
 import select
-import platform
 from typing import List, Dict, Any
 
 APIDOMAIN="http://monitor.onecdn.cn"
 
 VERSION = '1.0.0'
-INTERVAL = 1
-PORBEPORT = 80
 SERVERTOKEN=open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
-PINGTIME=10
+PINGTIME=20
 IPV4=''
 IPV6=''
-PING_PACKET_HISTORY_LEN = 100
-PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
 SUCCESS = 0
 FAILED = 1
-UNIX: bool = os.name == 'posix'
-SYS: str = platform.system()
 
 try:
     from queue import Queue     # python3

@@ -9,24 +9,17 @@ import threading
 import requests
 import struct
 import select
-import platform
 from typing import List, Dict, Any
 
 APIDOMAIN="http://monitor.onecdn.cn"
 
 VERSION = '1.0.0'
-INTERVAL = 1
-PORBEPORT = 80
 SERVERTOKEN=open("/usr/local/ServerStatusPlus/config/ServerToken.conf", "r").read().strip()
-PINGTIME=10
+PINGTIME=20
 IPV4=''
 IPV6=''
-PING_PACKET_HISTORY_LEN = 100
-PROBE_PROTOCOL_PREFER = "ipv4"  # ipv4, ipv6
 SUCCESS = 0
 FAILED = 1
-UNIX: bool = os.name == 'posix'
-SYS: str = platform.system()
 
 try:
     from queue import Queue     # python3
@@ -434,27 +427,31 @@ def get_ip():
     IPV6=ip6
     return ip4, ip6
 
-def check_alive(ip):
-    ping_result = None
-    ping_result = ping_tool.ping(ip)
-    
-    ping_data = {}
-    ping_data['max_rtt'] = ping_result.max_rtt
-    ping_data['min_rtt'] = ping_result.min_rtt
-    ping_data['avg_rtt'] = ping_result.avg_rtt
-    ping_data['packet_lost'] = ping_result.packet_lost
-    ping_data['ret_code'] = ping_result.ret_code
-    ping_data['packet_size'] = ping_result.packet_size
-    ping_data['timeout'] = ping_result.timeout
-    ping_data['dest'] = ping_result.dest
-    ping_data['dest_ip'] = ping_result.dest_ip
-    ping_data['from_ip_v4'] = IPV4
-    ping_data['from_ip_v6'] = IPV6
-    
-    # print(json.dumps(ping_data))
-    # ping_data['ping_data'] = json.loads(ping_result)
-    res = request_fun('/api/monitor/ping_data', {'data':json.dumps(ping_data)},'post')
-    # print(res.text)
+def check_alive(host):
+    if host['node_ipv4'] != None:
+        ip=host['node_ipv4']
+        node_key=host['node_key']
+        ping_result = None
+        ping_result = ping_tool.ping(ip)
+        
+        ping_data = {}
+        ping_data['max_rtt'] = ping_result.max_rtt
+        ping_data['min_rtt'] = ping_result.min_rtt
+        ping_data['avg_rtt'] = ping_result.avg_rtt
+        ping_data['packet_lost'] = ping_result.packet_lost
+        ping_data['ret_code'] = ping_result.ret_code
+        ping_data['packet_size'] = ping_result.packet_size
+        ping_data['timeout'] = ping_result.timeout
+        ping_data['dest'] = ip
+        ping_data['dest_ip'] = ping_result.dest_ip
+        ping_data['from_ip_v4'] = IPV4
+        ping_data['from_ip_v6'] = IPV6
+        ping_data['node_key'] = node_key
+        
+        # print(json.dumps(ping_data))
+        # ping_data['ping_data'] = json.loads(ping_result)
+        res = request_fun('/api/monitor/ping_data', {'data':json.dumps(ping_data)},'post')
+        # print(res.text)
         
 
 def get_ping():
@@ -462,9 +459,9 @@ def get_ping():
     try:
         ping_hosts = ping_hosts.json()
         if 'code' in ping_hosts and ping_hosts['code'] == 0 and len(ping_hosts['data']) > 0:
-            ping_ips = ping_hosts['data']
-            for ip in ping_ips:
-                p = threading.Thread(target=check_alive, args=(ip,))
+            ping_hosts = ping_hosts['data']
+            for host in ping_hosts:
+                p = threading.Thread(target=check_alive, args=(host,))
                 p.setDaemon(True)
                 p.start()
             

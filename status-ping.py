@@ -5,7 +5,7 @@ import json
 import sys
 import requests
 from typing import List, Dict, Any
-from icmplib import ping, multiping, traceroute, resolve, async_ping, async_multiping, async_resolve, ICMPLibError
+from icmplib import ping, ICMPLibError
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 

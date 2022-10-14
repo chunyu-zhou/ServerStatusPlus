@@ -148,7 +148,6 @@ def check_alive(ip,node_key,from_type):
         # print(res.text)
         # time.sleep(PINGTIME)
         RES = []
-        get_ping()
             
     
     
@@ -175,6 +174,13 @@ def get_ping():
             
     except ValueError:
         print('在获取Ping数据时，服务端返回数据错误')
+        
+    while True:
+        if nodes_length == 0:
+            get_ping()
+            break;
+        # else:
+            
     
 
 

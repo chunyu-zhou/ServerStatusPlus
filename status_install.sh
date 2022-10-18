@@ -42,6 +42,7 @@ Installation_dependency(){
 	pip3 install requests
 	pip3 install psutil
 	pip3 install distro
+	pip3 install icmplib
 	pip3 install wmi
 	pip3 install cachelib
 }

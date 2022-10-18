@@ -1183,6 +1183,9 @@ def monitor_main():
                     # print(res.text)
                     time.sleep(3)
                     break
+                except requests.exceptions.RequestException:
+                    print('连接到API超时 -- 请等待3秒')
+                    time.sleep(3)
                 except requests.exceptions.ConnectionError:
                     print('连接到API错误 -- 请等待3秒')
                     time.sleep(3)

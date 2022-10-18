@@ -1091,13 +1091,13 @@ def getOsInfo():
     # os_dist = distro.linux_distribution(full_distribution_name=False)
     CpuConstants = GetCpuConstants()
     MemInfo = GetMemInfo()
+    CpuInfo = GetCpuInfo()
     # IPV4, IPV6 = get_ip()
     
     array = {}
-    array['cpu'] = psutil.cpu_count(logical=False) # CPU物理核心
-    array['cpu_count'] = psutil.cpu_count() # CPU逻辑数量
-    array['cpu_core'] = psutil.cpu_count(logical=False) # CPU核心
-    array['cpu_threads'] = psutil.cpu_count() # CPU线程
+    array['cpu_count'] = CpuInfo['cpu_count'] # CPU逻辑数量
+    array['cpu_core'] = CpuInfo['cpu_core'] # CPU核心
+    array['cpu_threads'] = CpuInfo['cpu_threads'] # CPU线程
     array['os'] = distro.id()
     array['os_version'] = distro.version()
     array['os_name'] = distro.name()

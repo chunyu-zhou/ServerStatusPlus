@@ -1142,6 +1142,17 @@ def get_cpu_cache_size():
 
     return cache_size
     
+def get_cpu_vendor_id():
+    osname = platform.system()  # 获取操作系统的名称
+    vendor_id = ''
+    if osname in ["Windows", "Win32"]:
+        import wmi
+        vendor_id = wmi.WMI().Win32_Processor()[0].Manufacturer
+    else:
+        vendor_id = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'vendor_id'")[0].strip().split(':')[1].strip().split(' ')[0]
+
+    return vendor_id
+    
 def getOsInfo():
     SwapTotal, SwapUsed = get_swap()
     HDDTotal, HDDUsed = get_hdd()
@@ -1180,6 +1191,7 @@ def getOsInfo():
     array['os_type'] = platform.system()
     array['virtualization_firmware_enabled'] = get_virtualization_firmware_enabled() # 是否开启虚拟化
     array['cpu_cache_size'] = get_cpu_cache_size() # 是否开启虚拟化
+    array['cpu_vendor_id'] = get_cpu_vendor_id() # 是否开启虚拟化
     
     
     try:

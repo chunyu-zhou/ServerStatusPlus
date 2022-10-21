@@ -6,7 +6,6 @@ import os
 import json
 import psutil
 import sys
-import errno
 import threading
 import requests
 import platform
@@ -1115,6 +1114,34 @@ def get_cpu_speed():
 
     return speed
 
+def get_virtualization_firmware_enabled():
+    osname = platform.system()  # 获取操作系统的名称
+    is_enabled = 0
+    if osname in ["Windows", "Win32"]:
+        import wmi
+        _is_enabled = wmi.WMI().Win32_Processor()[0].VirtualizationFirmwareEnabled
+        if _is_enabled == True:
+            is_enabled = 1
+        else:
+            is_enabled = 0
+    else:
+        _is_enabled = re.findall("flags", ExecShellUnix("grep -E '(vmx|svm)' /proc/cpuinfo")[0])
+        if len(_is_enabled) > 0:
+            _is_enabled = 1
+
+    return is_enabled
+
+def get_cpu_cache_size():
+    osname = platform.system()  # 获取操作系统的名称
+    cache_size = 0
+    if osname in ["Windows", "Win32"]:
+        import wmi
+        cache_size = wmi.WMI().Win32_Processor()[0].VirtualizationFirmwareEnabled
+    else:
+        cache_size = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'cache size'")[0].strip().split(':')[1].strip().split(' ')[0]
+
+    return cache_size
+    
 def getOsInfo():
     SwapTotal, SwapUsed = get_swap()
     HDDTotal, HDDUsed = get_hdd()
@@ -1151,6 +1178,10 @@ def getOsInfo():
     array['ipv6'] = IPV6
     array['virtualization_type'] = get_virtualization_type()
     array['os_type'] = platform.system()
+    array['virtualization_firmware_enabled'] = get_virtualization_firmware_enabled() # 是否开启虚拟化
+    array['cpu_cache_size'] = get_cpu_cache_size() # 是否开启虚拟化
+    
+    
     try:
         res = request_fun('/api/monitor/set_system_info', {'data':json.dumps(array)},'post')
         # print(res.text)

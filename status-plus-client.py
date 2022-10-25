@@ -37,7 +37,7 @@ SUCCESS = 0
 FAILED = 1
 UNIX: bool = os.name == 'posix'
 SYS: str = platform.system()
-IO_CACHE={}
+IO_CACHE=psutil.disk_io_counters()
 
 try:
     from queue import Queue     # python3

@@ -1326,27 +1326,27 @@ def monitor_main():
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')
                     # print(res.text)
-                    time.sleep(3)
+                    time.sleep(1)
                     break
                 except requests.exceptions.RequestException:
-                    print('连接到API超时 -- 请等待3秒')
-                    time.sleep(3)
+                    print('连接到API超时 -- 请等待1秒')
+                    time.sleep(1)
                 except requests.exceptions.ConnectionError:
-                    print('连接到API错误 -- 请等待3秒')
-                    time.sleep(3)
+                    print('连接到API错误 -- 请等待1秒')
+                    time.sleep(1)
                 except requests.exceptions.ChunkedEncodingError:
-                    print('分块编码错误 -- 请等待3秒')
-                    time.sleep(3)  
+                    print('分块编码错误 -- 请等待1秒')
+                    time.sleep(1)  
                 except KeyboardInterrupt:
                     raise  
                 except:
-                    print('未知错误, 请等待3秒')
-                    time.sleep(3)
+                    print('未知错误, 请等待1秒')
+                    time.sleep(1)
         except KeyboardInterrupt:
             raise
         except Exception as e:
             print("捕获异常:", e)
-            time.sleep(3)
+            time.sleep(1)
 
 def get_ip_info():
     ipip_info = requests.get('https://api.myip.la/cn?json').json()

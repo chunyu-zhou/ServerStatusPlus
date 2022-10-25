@@ -1240,17 +1240,6 @@ def get_disk_info():
 
 def get_io_info():
     diskio = {}
-    diskio['ALL'] = {}
-    diskio['ALL']['read_count'] = 0
-    diskio['ALL']['write_count'] = 0
-    diskio['ALL']['read_bytes'] = 0
-    diskio['ALL']['write_bytes'] = 0
-    diskio['ALL']['read_time'] = 0
-    diskio['ALL']['write_time'] = 0
-    diskio['ALL']['read_merged_count'] = 0
-    diskio['ALL']['write_merged_count'] = 0
-    diskio['ALL']['busy_time'] = 0
-    
     info = psutil.disk_io_counters(perdisk=True)
     for disk_name in info.keys():
         diskio[disk_name] = {}
@@ -1264,18 +1253,6 @@ def get_io_info():
         diskio[disk_name]['write_merged_count'] = int(info[disk_name].write_merged_count)
         diskio[disk_name]['busy_time'] = int(info[disk_name].busy_time)
             
-        diskio['ALL']['read_count'] += diskio[disk_name]['read_count']
-        diskio['ALL']['write_count'] += diskio[disk_name]['write_count']
-        diskio['ALL']['read_bytes'] += diskio[disk_name]['read_bytes']
-        diskio['ALL']['write_bytes'] += diskio[disk_name]['write_bytes']
-        if diskio['ALL']['read_time'] < diskio[disk_name]['read_time']:
-            diskio['ALL']['read_time'] = diskio[disk_name]['read_time']
-        if diskio['ALL']['write_time'] < diskio[disk_name]['write_time']:
-            diskio['ALL']['write_time'] = diskio[disk_name]['write_time']
-        if diskio['ALL']['busy_time'] < diskio[disk_name]['busy_time']:
-            diskio['ALL']['busy_time'] = diskio[disk_name]['busy_time']
-        diskio['ALL']['read_merged_count'] += diskio[disk_name]['read_merged_count']
-        diskio['ALL']['write_merged_count'] += diskio[disk_name]['write_merged_count']
     return diskio
 
 def monitor_main():
@@ -1292,7 +1269,7 @@ def monitor_main():
                 # IP_STATUS = ip_status()
                 SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
                 # IO_INFO = GetIoReadWrite()  # 当前系统负载信息
-                IO_INFO = get_io_info()  # 当前系统负载信息
+                IO_INFO = psutil.disk_io_counters()  # 当前系统负载信息
                 NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}
@@ -1320,12 +1297,12 @@ def monitor_main():
                 array['sys_load_safe'] = SYSTEM_LOAD['safe']
                 # array['disk_info'] = GetDiskInfo()
                 array['disk_info'] = get_disk_info()
-                array['io_info_write'] = IO_INFO['ALL']['write_merged_count']
-                array['io_info_read'] = IO_INFO['ALL']['read_merged_count']
-                array['read_time'] = IO_INFO['ALL']['read_time']
-                array['write_time'] = IO_INFO['ALL']['write_time']
-                array['read_count'] = IO_INFO['ALL']['read_count']
-                array['write_count'] = IO_INFO['ALL']['write_count']
+                array['read_bytes'] = IO_INFO['read_bytes']
+                array['write_bytes'] = IO_INFO['write_bytes']
+                array['read_time'] = IO_INFO['read_time']
+                array['write_time'] = IO_INFO['write_time']
+                array['read_count'] = IO_INFO['read_count']
+                array['write_count'] = IO_INFO['write_count']
                 
                 array['up'] = NETWORK_INFO['up']
                 array['down'] = NETWORK_INFO['down']
@@ -1333,7 +1310,7 @@ def monitor_main():
                 array['downTotal'] = NETWORK_INFO['downTotal']
                 array['downPackets'] = NETWORK_INFO['downPackets']
                 array['upPackets'] = NETWORK_INFO['upPackets']
-                array['diskio'] = IO_INFO
+                array['diskio'] = get_io_info
                 
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')

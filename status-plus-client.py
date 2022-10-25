@@ -1261,7 +1261,6 @@ def monitor_main():
         try:
             while True:
                 
-                global IO_CACHE
                 read_time = int(IO_CACHE.read_time)
                 write_time = int(IO_CACHE.write_time)
                 read_bytes = int(IO_CACHE.read_bytes)

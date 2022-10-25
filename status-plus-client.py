@@ -37,6 +37,7 @@ SUCCESS = 0
 FAILED = 1
 UNIX: bool = os.name == 'posix'
 SYS: str = platform.system()
+IO_CACHE={}
 
 try:
     from queue import Queue     # python3
@@ -1259,6 +1260,15 @@ def monitor_main():
     while True:
         try:
             while True:
+                
+                global IO_CACHE
+                read_time = IO_CACHE.read_time
+                write_time = IO_CACHE.write_time
+                read_bytes = IO_CACHE.read_bytes
+                write_bytes = IO_CACHE.write_bytes
+                read_count = IO_CACHE.read_count
+                write_count = IO_CACHE.write_count
+                
                 # CPU = get_cpu()
                 NET_IN, NET_OUT = liuliang()
                 Uptime = get_uptime()
@@ -1269,7 +1279,7 @@ def monitor_main():
                 # IP_STATUS = ip_status()
                 SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
                 # IO_INFO = GetIoReadWrite()  # 当前系统负载信息
-                IO_INFO = psutil.disk_io_counters()  # 当前系统负载信息
+                IO_CACHE = IO_INFO = psutil.disk_io_counters()  # 当前系统负载信息
                 NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}
@@ -1297,12 +1307,12 @@ def monitor_main():
                 array['sys_load_safe'] = SYSTEM_LOAD['safe']
                 # array['disk_info'] = GetDiskInfo()
                 array['disk_info'] = get_disk_info()
-                array['read_bytes'] = IO_INFO.read_bytes
-                array['write_bytes'] = IO_INFO.write_bytes
-                array['read_time'] = IO_INFO.read_time
-                array['write_time'] = IO_INFO.write_time
-                array['read_count'] = IO_INFO.read_count
-                array['write_count'] = IO_INFO.write_count
+                array['read_bytes'] = IO_INFO.read_bytes-read_bytes
+                array['write_bytes'] = IO_INFO.write_bytes-write_bytes
+                array['read_time'] = IO_INFO.read_time-read_time
+                array['write_time'] = IO_INFO.write_time-write_time
+                array['read_count'] = IO_INFO.read_count-read_count
+                array['write_count'] = IO_INFO.write_count-write_count
                 
                 array['up'] = NETWORK_INFO['up']
                 array['down'] = NETWORK_INFO['down']

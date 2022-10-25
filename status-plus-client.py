@@ -1208,6 +1208,75 @@ def getOsInfo():
     except:
         print('未知错误, 请等待3秒')
 
+def get_disk_info():
+    
+    diskinfo = {}
+    disks = psutil.disk_partitions()
+    i=0;
+    # device: 设备路径（例如“/dev/hda1”）。 在 Windows 上，这是驱动器号（例如“C:\\”）。
+    # mountpoint: 挂载点路径（例如“/”）。 在 Windows 上，这是驱动器号（例如“C:\\”）。
+    # fstype: 分区文件系统（例如 UNIX 上的“ext3”或 Windows 上的“NTFS”）。
+    # opts: 一个逗号分隔的字符串，指示驱动器/分区的不同挂载选项。 平台相关。
+    # maxfile: 文件名可以具有的最大长度。
+    # maxpath: 路径名（目录名 + 基本文件名）的最大长度。
+    for disk in disks:
+        diskinfo[i] = {}
+        diskinfo[i]['device'] = disk.device
+        diskinfo[i]['mountpoint'] = disk.mountpoint
+        diskinfo[i]['fstype'] = disk.fstype
+        diskinfo[i]['opts'] = disk.opts
+        diskinfo[i]['maxfile'] = disk.maxfile
+        diskinfo[i]['maxpath'] = disk.maxpath
+        
+        disk_usage = psutil.disk_usage(disk.mountpoint) 
+        diskinfo[i]['total'] = disk_usage.total
+        diskinfo[i]['used'] = disk_usage.used
+        diskinfo[i]['free'] = disk_usage.free
+        diskinfo[i]['percent'] = disk_usage.percent
+        
+        i+=1
+    return diskinfo
+    
+
+def get_io_info():
+    diskio = {}
+    diskio['ALL'] = {}
+    diskio['ALL']['read_count'] = 0
+    diskio['ALL']['write_count'] = 0
+    diskio['ALL']['read_bytes'] = 0
+    diskio['ALL']['write_bytes'] = 0
+    diskio['ALL']['read_time'] = 0
+    diskio['ALL']['write_time'] = 0
+    diskio['ALL']['read_merged_count'] = 0
+    diskio['ALL']['write_merged_count'] = 0
+    diskio['ALL']['busy_time'] = 0
+    
+    info = psutil.disk_io_counters(perdisk=True)
+    for disk_name in info.keys():
+        diskio[disk_name] = {}
+        diskio[disk_name]['read_count']   = int(info[disk_name].read_count)
+        diskio[disk_name]['write_count']  = int(info[disk_name].write_count)
+        diskio[disk_name]['read_bytes']   = int(info[disk_name].read_bytes)
+        diskio[disk_name]['write_bytes']  = int(info[disk_name].write_bytes)
+        diskio[disk_name]['read_time']    = int(info[disk_name].read_time)
+        diskio[disk_name]['write_time']   = int(info[disk_name].write_time)
+        diskio[disk_name]['read_merged_count'] = int(info[disk_name].read_merged_count)
+        diskio[disk_name]['write_merged_count'] = int(info[disk_name].write_merged_count)
+        diskio[disk_name]['busy_time'] = int(info[disk_name].busy_time)
+            
+        diskio['ALL']['read_count'] += diskio[disk_name]['read_count']
+        diskio['ALL']['write_count'] += diskio[disk_name]['write_count']
+        diskio['ALL']['read_bytes'] += diskio[disk_name]['read_bytes']
+        diskio['ALL']['write_bytes'] += diskio[disk_name]['write_bytes']
+        if diskio['ALL']['read_time'] < diskio[disk_name]['read_time']:
+            diskio['ALL']['read_time'] = diskio[disk_name]['read_time']
+        if diskio['ALL']['write_time'] < diskio[disk_name]['write_time']:
+            diskio['ALL']['write_time'] = diskio[disk_name]['write_time']
+        if diskio['ALL']['busy_time'] < diskio[disk_name]['busy_time']:
+            diskio['ALL']['busy_time'] = diskio[disk_name]['busy_time']
+        diskio['ALL']['read_merged_count'] += diskio[disk_name]['read_merged_count']
+        diskio['ALL']['write_merged_count'] += diskio[disk_name]['write_merged_count']
+    return diskio
 
 def monitor_main():
     while True:
@@ -1222,7 +1291,8 @@ def monitor_main():
                 HDDTotal, HDDUsed = get_hdd()
                 # IP_STATUS = ip_status()
                 SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
-                IO_INFO = GetIoReadWrite()  # 当前系统负载信息
+                # IO_INFO = GetIoReadWrite()  # 当前系统负载信息
+                IO_INFO = get_io_info()  # 当前系统负载信息
                 NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}
@@ -1248,15 +1318,22 @@ def monitor_main():
                 array['sys_load_max'] = SYSTEM_LOAD['max']
                 array['sys_load_limit'] = SYSTEM_LOAD['limit']
                 array['sys_load_safe'] = SYSTEM_LOAD['safe']
-                array['disk_info'] = GetDiskInfo()
-                array['io_info_write'] = IO_INFO['write']
-                array['io_info_read'] = IO_INFO['read']
+                # array['disk_info'] = GetDiskInfo()
+                array['disk_info'] = get_disk_info()
+                array['io_info_write'] = IO_INFO['ALL']['write_merged_count']
+                array['io_info_read'] = IO_INFO['ALL']['read_merged_count']
+                array['read_time'] = IO_INFO['ALL']['read_time']
+                array['write_time'] = IO_INFO['ALL']['write_time']
+                array['read_count'] = IO_INFO['ALL']['read_count']
+                array['write_count'] = IO_INFO['ALL']['write_count']
+                
                 array['up'] = NETWORK_INFO['up']
                 array['down'] = NETWORK_INFO['down']
                 array['upTotal'] = NETWORK_INFO['upTotal']
                 array['downTotal'] = NETWORK_INFO['downTotal']
                 array['downPackets'] = NETWORK_INFO['downPackets']
                 array['upPackets'] = NETWORK_INFO['upPackets']
+                array['diskio'] = IO_INFO
                 
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')

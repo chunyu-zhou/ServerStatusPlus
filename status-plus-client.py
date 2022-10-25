@@ -1297,12 +1297,12 @@ def monitor_main():
                 array['sys_load_safe'] = SYSTEM_LOAD['safe']
                 # array['disk_info'] = GetDiskInfo()
                 array['disk_info'] = get_disk_info()
-                array['read_bytes'] = IO_INFO['read_bytes']
-                array['write_bytes'] = IO_INFO['write_bytes']
-                array['read_time'] = IO_INFO['read_time']
-                array['write_time'] = IO_INFO['write_time']
-                array['read_count'] = IO_INFO['read_count']
-                array['write_count'] = IO_INFO['write_count']
+                array['read_bytes'] = IO_INFO.read_bytes
+                array['write_bytes'] = IO_INFO.write_bytes
+                array['read_time'] = IO_INFO.read_time
+                array['write_time'] = IO_INFO.write_time
+                array['read_count'] = IO_INFO.read_count
+                array['write_count'] = IO_INFO.write_count
                 
                 array['up'] = NETWORK_INFO['up']
                 array['down'] = NETWORK_INFO['down']

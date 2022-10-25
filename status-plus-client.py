@@ -37,7 +37,21 @@ SUCCESS = 0
 FAILED = 1
 UNIX: bool = os.name == 'posix'
 SYS: str = platform.system()
-IO_CACHE=psutil.disk_io_counters()
+netSpeed = {
+    'netrx': 0.0,
+    'nettx': 0.0,
+    'clock': 0.0,
+    'diff': 0.0,
+    'avgrx': 0,
+    'avgtx': 0
+}
+IO_CACHE={}
+IO_CACHE['read_time'] = 0
+IO_CACHE['write_time'] = 0
+IO_CACHE['read_bytes'] = 0
+IO_CACHE['write_bytes'] = 0
+IO_CACHE['read_count'] = 0
+IO_CACHE['write_count'] = 0
 
 try:
     from queue import Queue     # python3
@@ -944,25 +958,6 @@ def get_network(ip_version):
     except:
         return False
 
-lostRate = {
-    '10010': 0.0,
-    '189': 0.0,
-    '10086': 0.0
-}
-pingTime = {
-    '10010': 0,
-    '189': 0,
-    '10086': 0
-}
-netSpeed = {
-    'netrx': 0.0,
-    'nettx': 0.0,
-    'clock': 0.0,
-    'diff': 0.0,
-    'avgrx': 0,
-    'avgtx': 0
-}
-
 def _net_speed():
     while True:
         avgrx = 0
@@ -1257,16 +1252,16 @@ def get_io_info():
     return diskio
 
 def monitor_main():
+    global IO_CACHE
     while True:
         try:
             while True:
-                
-                read_time = int(IO_CACHE.read_time)
-                write_time = int(IO_CACHE.write_time)
-                read_bytes = int(IO_CACHE.read_bytes)
-                write_bytes = int(IO_CACHE.write_bytes)
-                read_count = int(IO_CACHE.read_count)
-                write_count = int(IO_CACHE.write_count)
+                read_time = int(IO_CACHE['read_time'])
+                write_time = int(IO_CACHE['write_time'])
+                read_bytes = int(IO_CACHE['read_bytes'])
+                write_bytes = int(IO_CACHE['write_bytes'])
+                read_count = int(IO_CACHE['read_count'])
+                write_count = int(IO_CACHE['write_count'])
                 
                 # CPU = get_cpu()
                 NET_IN, NET_OUT = liuliang()
@@ -1278,8 +1273,14 @@ def monitor_main():
                 # IP_STATUS = ip_status()
                 SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
                 # IO_INFO = GetIoReadWrite()  # 当前系统负载信息
-                IO_CACHE = psutil.disk_io_counters()  # 当前系统负载信息
-                IO_INFO = IO_CACHE
+                IO_INFO = psutil.disk_io_counters()  # 当前系统负载信息
+                
+                IO_CACHE['read_time'] = IO_INFO.read_time
+                IO_CACHE['write_time'] = IO_INFO.write_time
+                IO_CACHE['read_bytes'] = IO_INFO.read_bytes
+                IO_CACHE['write_bytes'] = IO_INFO.write_bytes
+                IO_CACHE['read_count'] = IO_INFO.read_count
+                IO_CACHE['write_count'] = IO_INFO.write_count
                 NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}

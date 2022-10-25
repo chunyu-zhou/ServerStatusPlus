@@ -1279,7 +1279,8 @@ def monitor_main():
                 # IP_STATUS = ip_status()
                 SYSTEM_LOAD = GetLoadAverage()  # 当前系统负载信息
                 # IO_INFO = GetIoReadWrite()  # 当前系统负载信息
-                IO_CACHE = IO_INFO = psutil.disk_io_counters()  # 当前系统负载信息
+                IO_CACHE = psutil.disk_io_counters()  # 当前系统负载信息
+                IO_INFO = IO_CACHE
                 NETWORK_INFO = GetNetWork()  # 当前系统负载信息
             
                 array = {}

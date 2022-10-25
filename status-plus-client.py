@@ -1262,12 +1262,12 @@ def monitor_main():
             while True:
                 
                 global IO_CACHE
-                read_time = IO_CACHE.read_time
-                write_time = IO_CACHE.write_time
-                read_bytes = IO_CACHE.read_bytes
-                write_bytes = IO_CACHE.write_bytes
-                read_count = IO_CACHE.read_count
-                write_count = IO_CACHE.write_count
+                read_time = int(IO_CACHE.read_time)
+                write_time = int(IO_CACHE.write_time)
+                read_bytes = int(IO_CACHE.read_bytes)
+                write_bytes = int(IO_CACHE.write_bytes)
+                read_count = int(IO_CACHE.read_count)
+                write_count = int(IO_CACHE.write_count)
                 
                 # CPU = get_cpu()
                 NET_IN, NET_OUT = liuliang()
@@ -1307,12 +1307,12 @@ def monitor_main():
                 array['sys_load_safe'] = SYSTEM_LOAD['safe']
                 # array['disk_info'] = GetDiskInfo()
                 array['disk_info'] = get_disk_info()
-                array['read_bytes'] = IO_INFO.read_bytes-read_bytes
-                array['write_bytes'] = IO_INFO.write_bytes-write_bytes
-                array['read_time'] = IO_INFO.read_time-read_time
-                array['write_time'] = IO_INFO.write_time-write_time
-                array['read_count'] = IO_INFO.read_count-read_count
-                array['write_count'] = IO_INFO.write_count-write_count
+                array['read_bytes'] = int(IO_INFO.read_bytes-read_bytes)
+                array['write_bytes'] = int(IO_INFO.write_bytes-write_bytes)
+                array['read_time'] = int(IO_INFO.read_time-read_time)
+                array['write_time'] = int(IO_INFO.write_time-write_time)
+                array['read_count'] = int(IO_INFO.read_count-read_count)
+                array['write_count'] = int(IO_INFO.write_count-write_count)
                 
                 array['up'] = NETWORK_INFO['up']
                 array['down'] = NETWORK_INFO['down']

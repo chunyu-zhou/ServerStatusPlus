@@ -1310,7 +1310,7 @@ def monitor_main():
                 array['downTotal'] = NETWORK_INFO['downTotal']
                 array['downPackets'] = NETWORK_INFO['downPackets']
                 array['upPackets'] = NETWORK_INFO['upPackets']
-                array['diskio'] = get_io_info
+                array['diskio'] = get_io_info()
                 
                 try:
                     res = request_fun('/api/monitor/monitor_log', {'data':json.dumps(array)},'post')

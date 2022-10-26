@@ -1134,7 +1134,10 @@ def get_cpu_cache_size():
         import wmi
         cache_size = wmi.WMI().Win32_Processor()[0].VirtualizationFirmwareEnabled
     else:
-        cache_size = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'cache size'")[0].strip().split(':')[1].strip().split(' ')[0]
+        try:
+            cache_size = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'cache size'")[0].strip().split(':')[1].strip().split(' ')[0]
+        except:
+            cache_size = 0
 
     return cache_size
     
@@ -1145,7 +1148,10 @@ def get_cpu_vendor_id():
         import wmi
         vendor_id = wmi.WMI().Win32_Processor()[0].Manufacturer
     else:
-        vendor_id = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'vendor_id'")[0].strip().split(':')[1].strip().split(' ')[0]
+        try:
+            vendor_id = ExecShellUnix("cat /proc/cpuinfo |grep -m 1 'vendor_id'")[0].strip().split(':')[1].strip().split(' ')[0]
+        except:
+            vendor_id = ''
 
     return vendor_id
     
@@ -1205,7 +1211,7 @@ def getOsInfo():
         print('未知错误, 请等待3秒')
 
 def get_disk_info():
-    
+    #https://hellowac.github.io/psutil_doc/system/disks/disk_io_counters.html
     diskinfo = {}
     disks = psutil.disk_partitions()
     i=0;
@@ -1235,6 +1241,7 @@ def get_disk_info():
     
 
 def get_io_info():
+    #https://hellowac.github.io/psutil_doc/system/disks/disk_io_counters.html
     diskio = {}
     info = psutil.disk_io_counters(perdisk=True)
     for disk_name in info.keys():
